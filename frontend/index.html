@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Mars Haritası — Jezero Güvenli Rota</title>
+  <title>Martian Map — Jezero Safe Marswalk</title>
 
   <!-- Leaflet 1.9.4, CDN'den sabit sürüm. "integrity" hash'i dosyanın
        değiştirilmediğini tarayıcıya doğrulatır (hash'ler curl ile kontrol edildi). -->
@@ -45,10 +45,10 @@
                          vertical-align: -2px; border: 1px solid rgba(0,0,0,.3); }
 
     /* Rota özeti: başlık + etiket/değer satırları */
-    .rota-ozeti { min-width: 230px; }
+    .rota-ozeti { min-width: 230px; max-width: 380px; } /* İngilizce etiketler uzun: not satırı kırılmasın */
     .rota-ozeti .baslik { font-weight: 600; margin-bottom: 4px; border-left: 4px solid #00b8d4; padding-left: 6px; }
     .rota-ozeti .metrik { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; }
-    .rota-ozeti .etiket { color: #555; min-width: 88px; }
+    .rota-ozeti .etiket { color: #555; min-width: 128px; }
     .rota-ozeti .metrik b { font-size: 16px; white-space: nowrap; }
     /* Notlar #888 yerine #666: beyaz zeminde projektörde de okunur kontrast */
     .rota-ozeti .not { color: #666; font-size: 12px; }

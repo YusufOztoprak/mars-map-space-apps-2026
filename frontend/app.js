@@ -55,10 +55,10 @@ const bilimKatmani = L.layerGroup().addTo(map);
 // Katman aç/kapa kontrolü (sağ üst). Değişkende tutuyoruz ki sonradan
 // yüklenen katmanlar (eğim haritası) addOverlay ile eklenebilsin.
 const katmanKontrol = L.control.layers(null, {
-  "MOLA renkli yükseklik (tüm Mars, 463 m)": molaKatmani,
+  "MOLA colour relief (global, 463 m)": molaKatmani,
   "HiRISE Jezero (25 cm)": hiriseLayer,
-  "HiRISE kapsama sınırı": kapsamaKutusu,
-  "Bilim noktaları (Perseverance)": bilimKatmani,
+  "HiRISE coverage": kapsamaKutusu,
+  "Science sites (Perseverance)": bilimKatmani,
 }, { collapsed: DAR_EKRAN }).addTo(map); // telefonda katman paneli simgeye küçülür
 
 L.control.scale({ imperial: false }).addTo(map);
@@ -73,7 +73,7 @@ const EgimLejanti = L.Control.extend({
   onAdd: function () {
     const d = L.DomUtil.create("div", "durum-kutusu egim-lejant");
     const baslik = document.createElement("div");
-    baslik.className = "baslik"; baslik.textContent = "Eğim (rotanın kullandığı veri)";
+    baslik.className = "baslik"; baslik.textContent = "Slope (data used by the router)";
     d.append(baslik);
     SLOPE_OVERLAY.siniflar.forEach((s) => {
       const satir = document.createElement("div");
@@ -104,7 +104,7 @@ fetch(SLOPE_OVERLAY.metaUrl)
     egimKatmani.on("error", () => console.warn("Eğim resmi yüklenemedi:", SLOPE_OVERLAY.url));
     // Telefonda alt köşeler rota özetine yetmiyor; lejant sol üste (zoom düğmelerinin altına) gider.
     egimLejanti = new EgimLejanti({ position: DAR_EKRAN ? "topleft" : "bottomright", sinir });
-    katmanKontrol.addOverlay(egimKatmani, "Eğim tehlikesi (CTX DEM, 20 m)");
+    katmanKontrol.addOverlay(egimKatmani, "Slope hazard (CTX DEM, 20 m)");
     if (SLOPE_OVERLAY.showOnStart) map.addLayer(egimKatmani); // overlayadd → lejant da açılır
   })
   .catch((hata) => console.warn("Eğim katmanı bulunamadı (" + SLOPE_OVERLAY.metaUrl + "):", hata.message));
@@ -156,18 +156,18 @@ map.on("click", (e) => {
     // 1. tıklama (veya 3. tıklama → önce sıfırla): başlangıç noktası
     sifirla();
     baslangic = e.latlng;
-    baslangicIsaret = isaretKoy(e.latlng, "#2e9e44", "Başlangıç");
-    durumGoster("Başlangıç seçildi. Şimdi bitiş noktasına tıklayın.");
+    baslangicIsaret = isaretKoy(e.latlng, "#2e9e44", "Start");
+    durumGoster("Click to set the end point.");
   } else {
     // 2. tıklama: bitiş noktası → rotayı iste
-    bitisIsaret = isaretKoy(e.latlng, "#d33", "Bitiş");
+    bitisIsaret = isaretKoy(e.latlng, "#d33", "End");
     rotaIste(baslangic, e.latlng);
   }
 });
 
 // ---------- 5) Backend'den rota isteme ----------
 async function rotaIste(start, end) {
-  durumGoster("Rota hesaplanıyor…", "yukleniyor");
+  durumGoster("Computing route…", "yukleniyor");
 
   const kontrol = new AbortController();
   aktifIstek = kontrol;
@@ -190,7 +190,7 @@ async function rotaIste(start, end) {
 
     if (!yanit.ok) {
       // Backend hata formatı: {"error": "<Türkçe mesaj>"} + 400/422
-      const mesaj = veri && veri.error ? veri.error : `Sunucu hatası (HTTP ${yanit.status}).`;
+      const mesaj = veri && veri.error ? veri.error : `Server error (HTTP ${yanit.status}).`;
       throw new Error(mesaj);
     }
     // Çizmeden önce geometriyi doğrula; bozuksa hata fırlatır (catch'e düşer).
@@ -199,9 +199,9 @@ async function rotaIste(start, end) {
   } catch (hata) {
     if (hata.name === "AbortError" && !zamanAsimi) return; // kullanıcı sıfırladı, sessiz geç
     let mesaj = hata.message;
-    if (zamanAsimi) mesaj = "Sunucu zamanında cevap vermedi. Tekrar deneyin.";
-    else if (hata instanceof TypeError) mesaj = "Rota sunucusuna ulaşılamadı. Backend çalışıyor mu?";
-    durumGoster("Hata: " + mesaj + " (Yeniden denemek için haritaya tıklayın.)", "hata");
+    if (zamanAsimi) mesaj = "The server did not respond in time.";
+    else if (hata instanceof TypeError) mesaj = "Could not reach the server.";
+    durumGoster("Error: " + mesaj + " (Click the map to try again.)", "hata");
   } finally {
     clearTimeout(zamanlayici);
     if (aktifIstek === kontrol) aktifIstek = null;
@@ -216,7 +216,7 @@ const sonluSayi = (v) => typeof v === "number" && Number.isFinite(v);
 // LineString. Geometri LineString olmalı ve en az 2 geçerli [boylam, enlem]
 // içermeli. Değilse hata fırlatır; rota haritaya ÇİZİLMEZ.
 function rotaGeometrisiAl(veri) {
-  const hatali = new Error("Sunucudan geçersiz bir rota geldi.");
+  const hatali = new Error("The server sent an invalid route.");
   if (!veri || typeof veri !== "object") throw hatali;
   const g = veri.type === "Feature" ? veri.geometry : veri;
   if (!g || g.type !== "LineString" || !Array.isArray(g.coordinates)) throw hatali;
@@ -241,7 +241,7 @@ function rotaCiz(geometri, ozellikler) {
   ]).addTo(map);
 
   const m = rotaMetrikleri(ozellikler);
-  rotaKatmani.bindPopup(`Mesafe: ${m.mesafe} · Süre: ${m.sure} · Maks. eğim: ${m.egim}`);
+  rotaKatmani.bindPopup(`Distance: ${m.mesafe} · Est. walking time: ${m.sure} · Max. slope: ${m.egim}`);
   rotaKutusuGoster(m);
   // maxZoom: çok kısa rotada (ör. başlangıç ve bitiş aynı DEM hücresinde,
   // backend 2 aynı noktalı çizgi döner) harita en yakın zoom'a zıplamasın.
@@ -257,15 +257,15 @@ function rotaMetrikleri(p) {
     if (v === undefined || v === null) return "—";
     if (!sonluSayi(v) || v < 0) {
       console.warn(`Geçersiz rota metriği ${ad}:`, v);
-      return "geçersiz";
+      return "invalid";
     }
     return bicim(v);
   };
-  const tr = (v, basamak) => v.toLocaleString("tr-TR", { maximumFractionDigits: basamak });
+  const tr = (v, basamak) => v.toLocaleString("en-US", { maximumFractionDigits: basamak });
   // Saati "1 sa 43 dk" biçimine çevirir (1,72 saat'ten daha kolay okunur).
   const saatDakika = (saat) => {
     const dk = Math.round(saat * 60);
-    return dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa ${dk % 60} dk`;
+    return dk < 60 ? `${dk} min` : `${Math.floor(dk / 60)} h ${dk % 60} min`;
   };
   return {
     mesafe: metin("distance_km", (v) => tr(v, 2) + " km"),
@@ -289,14 +289,14 @@ function rotaKutusuGoster(m) {
     return s;
   };
   const baslik = document.createElement("div");
-  baslik.className = "baslik"; baslik.textContent = "Güvenli yürüyüş rotası";
+  baslik.className = "baslik"; baslik.textContent = "Safe walking route";
   const ipucu = document.createElement("div");
-  ipucu.className = "ipucu"; ipucu.textContent = "Yeni rota için haritaya tıklayın.";
+  ipucu.className = "ipucu"; ipucu.textContent = "Click the map to start a new route.";
   d.replaceChildren(
     baslik,
-    satir("Mesafe", m.mesafe),
-    satir("Tahmini süre", m.sure, "Tobler yürüyüş modeli"),
-    satir("Maks. eğim", m.egim, `eşik: ${SLOPE_THRESHOLD_DEG}°`),
+    satir("Distance", m.mesafe),
+    satir("Est. walking time", m.sure, "Tobler hiking model"),
+    satir("Max. slope", m.egim, `limit: ${SLOPE_THRESHOLD_DEG}°`),
     ipucu,
   );
 }
@@ -313,7 +313,7 @@ function el(etiket, metin, ozellikler = {}) {
 
 function bilimPopup(p) {
   const kutu = el("div", "", { className: "bilim-popup" });
-  kutu.append(el("h3", p.name || "İsimsiz nokta"));
+  kutu.append(el("h3", p.name || "Unnamed site"));
   if (p.image_preview_url) {
     // loading="lazy": resim sadece popup açılınca indirilir. Resmin yeri CSS'te
     // sabit oranla ayrılır, böylece popup açıldığı anda son boyutundadır ve
@@ -323,9 +323,9 @@ function bilimPopup(p) {
     if (alt) kutu.append(el("div", alt, { className: "kucuk" }));
   }
   if (p.science_summary) kutu.append(el("p", p.science_summary));
-  if (p.coordinate_accuracy) kutu.append(el("div", "Konum doğruluğu: " + p.coordinate_accuracy, { className: "kucuk" }));
+  if (p.coordinate_accuracy) kutu.append(el("div", "Location accuracy: " + p.coordinate_accuracy, { className: "kucuk" }));
   if (p.image_gallery_url) {
-    kutu.append(el("a", "Ham görüntüyü NASA'da aç ↗", { href: p.image_gallery_url, target: "_blank", rel: "noopener" }));
+    kutu.append(el("a", "Open raw image at NASA ↗", { href: p.image_gallery_url, target: "_blank", rel: "noopener" }));
   }
   return kutu;
 }
@@ -354,4 +354,4 @@ async function bilimNoktalariniYukle() {
 }
 bilimNoktalariniYukle();
 
-durumGoster("Başlangıç noktası için haritaya tıklayın.");
+durumGoster("Click the map to set a start point.");

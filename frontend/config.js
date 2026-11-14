@@ -81,8 +81,8 @@ const SLOPE_OVERLAY = {
   // Lejant renkleri make_slope_overlay.py'deki renklerle aynı.
   // Sınır derecesi ({sinir}) slope_overlay.json'daki slope_limit_deg'den gelir.
   siniflar: [
-    { renk: "#facc15", metin: "10–15°  orta eğim" },
-    { renk: "#f97316", metin: "15–{sinir}°  dik" },
-    { renk: "#dc2626", metin: "> {sinir}°  geçilmez (rota asla girmez)" },
+    { renk: "#facc15", metin: "10–15° moderate" },
+    { renk: "#f97316", metin: "15–{sinir}° steep" },
+    { renk: "#dc2626", metin: "> {sinir}° blocked (route never enters)" },
   ],
 };
