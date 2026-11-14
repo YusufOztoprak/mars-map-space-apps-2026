@@ -5,6 +5,7 @@ import numpy as np
 
 from dem_utils import generate_synthetic_dem, compute_slope
 from routing import build_cost_grid, astar
+from werkzeug.exceptions import HTTPException
 
 app = Flask(__name__)
 CORS(app)
@@ -85,6 +86,9 @@ def route():
     if path is None:
         return jsonify({"error": "güvenli rota bulunamadı (çok dik arazi)"}), 422
 
+    if len(path) == 1:
+        path = [path[0], path[0]]  # degenerate case: start and end in the same cell
+
     distance_km, estimated_time_hours, max_slope_deg = path_stats(path)
     coordinates = [list(pixel_to_lonlat(r, c)) for r, c in path]
 
@@ -99,6 +103,15 @@ def route():
     }
     return jsonify(geojson)
 
+@app.errorhandler(HTTPException)
+def handle_http_exception(e):
+    return jsonify({"error": e.description}), e.code
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(e):
+    app.logger.exception("Unexpected error")
+    return jsonify({"error": "sunucu hatası, lütfen tekrar deneyin"}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
