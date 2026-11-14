@@ -1,7 +1,7 @@
 # Space Apps 2026 — Submission Draft (not submitted)
 
 - **Challenge:** Interplanetary Survival Guide: Martian Map
-- **Team name:** Confirm the exact name on the NASA team page.
+- **Team name:** Manifest
 - **Team members:** Yusuf Öztoprak, Yusuf Tunç, Eren YILMAZ, Emirsultan BOĞATEKİN, Abdullah Demirel
 - **Repository:** https://github.com/YusufOztoprak/mars-map-space-apps-2026
 

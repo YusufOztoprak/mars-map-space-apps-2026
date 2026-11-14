@@ -100,6 +100,8 @@ tests/      Integration and contract test suite
 
 ## Team
 
+**Team Manifest**
+
 - **Yusuf Öztoprak** — Backend & routing; documentation & presentation
 - **Yusuf Tunç** — Frontend & map; documentation & presentation
 - **Eren Yılmaz** and **Emirsultan Boğatekin** — Data & content
