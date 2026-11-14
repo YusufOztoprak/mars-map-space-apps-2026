@@ -24,6 +24,18 @@ function buildRouteRequest(start, end) {
   };
 }
 
+// MOLA renkli gölgeli yükseklik (tüm Mars, 463 m/piksel): HiRISE'ın altındaki
+// geniş ölçekli altlık. Sadece görsel bağlam; eğim/rota hesabında KULLANILMAZ
+// (rota 20 m CTX DEM ile hesaplanır).
+// Dikkat: uzantı .jpg (png 404 verir); en yüksek zoom 7 (8 → 404). curl ile doğrulandı.
+// Leaflet 8 ve üstünde z7 tile'larını büyüterek gösterir.
+const MOLA = {
+  url: "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg",
+  // !! Atıf metni veri rolünce Mars Trek katman sayfasından doğrulanacak.
+  attribution: "MOLA: NASA/JPL/GSFC",
+  maxNativeZoom: 7,
+};
+
 // Backend'in eğim sınırı (backend/routing.py → SAFETY_THRESHOLD_DEG).
 // Sadece özet kutusunda bilgi olarak gösterilir; rotayı backend sınırlar.
 // Backend değeri değişirse burayı da güncelleyin.
