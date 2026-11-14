@@ -24,6 +24,11 @@ function buildRouteRequest(start, end) {
   };
 }
 
+// Backend'in eğim sınırı (backend/routing.py → SAFETY_THRESHOLD_DEG).
+// Sadece özet kutusunda bilgi olarak gösterilir; rotayı backend sınırlar.
+// Backend değeri değişirse burayı da güncelleyin.
+const SLOPE_THRESHOLD_DEG = 20;
+
 // Veri rolünün hazırladığı bilim noktaları (GeoJSON FeatureCollection).
 // Yol sayfaya göredir: sayfa REPO KÖKÜNDEN sunulmalı
 // (repo kökünde "python -m http.server 8000" → http://localhost:8000/frontend/index.html),

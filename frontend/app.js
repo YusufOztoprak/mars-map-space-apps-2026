@@ -168,28 +168,65 @@ function rotaCiz(geometri, ozellikler) {
     style: { color: "#00e5ff", weight: 4, opacity: 0.9 },
   }).addTo(map);
 
-  const ozet = rotaOzeti(ozellikler);
-  rotaKatmani.bindPopup(ozet);
-  durumGoster(ozet + "  (Yeni rota için haritaya tıklayın.)");
-  map.fitBounds(rotaKatmani.getBounds(), { padding: [40, 40] });
+  const m = rotaMetrikleri(ozellikler);
+  rotaKatmani.bindPopup(`Mesafe: ${m.mesafe} · Süre: ${m.sure} · Maks. eğim: ${m.egim}`);
+  rotaKutusuGoster(m);
+  // maxZoom: çok kısa rotada (ör. başlangıç ve bitiş aynı DEM hücresinde,
+  // backend 2 aynı noktalı çizgi döner) harita en yakın zoom'a zıplamasın.
+  map.fitBounds(rotaKatmani.getBounds(), { padding: [40, 40], maxZoom: 16 });
 }
 
-// Backend'in properties alanlarını okunur metne çevirir.
+// Backend'in properties alanlarını okunur metinlere çevirir.
 // Alan yok → "—". Alan var ama sayısal/sonlu/negatif-olmayan değil → "geçersiz"
 // (yanlış bir sayıyı, ör. negatif mesafeyi, kullanıcıya göstermeyiz).
-function rotaOzeti(p) {
-  const sayi = (ad, birim) => {
+function rotaMetrikleri(p) {
+  const metin = (ad, bicim) => {
     const v = p[ad];
     if (v === undefined || v === null) return "—";
     if (!sonluSayi(v) || v < 0) {
       console.warn(`Geçersiz rota metriği ${ad}:`, v);
       return "geçersiz";
     }
-    return v.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) + " " + birim;
+    return bicim(v);
   };
-  return `Mesafe: ${sayi("distance_km", "km")} · ` +
-         `Süre: ${sayi("estimated_time_hours", "saat")} · ` +
-         `Maks. eğim: ${sayi("max_slope_deg", "°")}`;
+  const tr = (v, basamak) => v.toLocaleString("tr-TR", { maximumFractionDigits: basamak });
+  // Saati "1 sa 43 dk" biçimine çevirir (1,72 saat'ten daha kolay okunur).
+  const saatDakika = (saat) => {
+    const dk = Math.round(saat * 60);
+    return dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa ${dk % 60} dk`;
+  };
+  return {
+    mesafe: metin("distance_km", (v) => tr(v, 2) + " km"),
+    sure: metin("estimated_time_hours", saatDakika),
+    egim: metin("max_slope_deg", (v) => tr(v, 1) + "°"),
+  };
+}
+
+// Sol alttaki kutuyu rota özetine çevirir: başlık + 3 metrik + ipucu.
+// DOM ile kuruluyor (textContent), sunucudan gelen hiçbir şey HTML olarak yorumlanmaz.
+function rotaKutusuGoster(m) {
+  const d = durum._div;
+  d.className = "durum-kutusu rota-ozeti";
+  const satir = (etiket, deger, not) => {
+    const s = document.createElement("div");
+    s.className = "metrik";
+    const e = document.createElement("span"); e.className = "etiket"; e.textContent = etiket;
+    const v = document.createElement("b"); v.textContent = deger;
+    s.append(e, v);
+    if (not) { const n = document.createElement("span"); n.className = "not"; n.textContent = not; s.append(n); }
+    return s;
+  };
+  const baslik = document.createElement("div");
+  baslik.className = "baslik"; baslik.textContent = "Güvenli yürüyüş rotası";
+  const ipucu = document.createElement("div");
+  ipucu.className = "ipucu"; ipucu.textContent = "Yeni rota için haritaya tıklayın.";
+  d.replaceChildren(
+    baslik,
+    satir("Mesafe", m.mesafe),
+    satir("Tahmini süre", m.sure, "Tobler yürüyüş modeli"),
+    satir("Maks. eğim", m.egim, `eşik: ${SLOPE_THRESHOLD_DEG}°`),
+    ipucu,
+  );
 }
 
 // ---------- 7) Bilim noktaları ----------
