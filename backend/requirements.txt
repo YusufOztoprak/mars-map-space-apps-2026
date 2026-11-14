@@ -3,3 +3,4 @@ flask-cors
 numpy
 rasterio
 pytest
+pillow

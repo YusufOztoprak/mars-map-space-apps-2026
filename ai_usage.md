@@ -12,7 +12,7 @@ We used AI tools to speed up research, coding and testing. Every AI-assisted out
 | Claude Code (Anthropic) | Frontend code and browser testing |
 | Gemini (Google) | Literature review before the hackathon |
 | ChatGPT (OpenAI) | Early challenge planning; GeoJSON structuring, English science summaries, attribution drafting, and image/DEM metadata checks |
-| TODO: Integration/Test tool | TODO |
+| OpenAI Codex | Repository analysis, API contract checks, integration tests, frontend flow tests and test reports |
 
 ## Where AI was used
 
@@ -35,12 +35,11 @@ The presentation screenshots are captures of our running app, not AI-generated i
 ### Data and content (`data/`, `data_sources.md`) — Eren YILMAZ and Emirsultan BOĞATEKİN
 The team compiled five complete Perseverance waypoints into `data/science_points.json`, preserving approximate-coordinate notes, image links and credits, and concise English science summaries. The Brac preview uses a compact 1200-pixel derivative of the NASA Mastcam-Z natural-color panorama; the USGS 20 m/pixel CTX DEM was downloaded outside the repository for backend handoff. `data_sources.md` records NASA/USGS sources and resolution limits, Leaflet BSD-2 and HiRISE credits, the Lake Salda analogy, and the decision to defer global MOLA coverage. ChatGPT helped structure the GeoJSON, draft summaries and attribution, and check Brac image details and CTX metadata; NASA/USGS mission data and imagery were not AI-generated.
 
-### Integration and testing (`tests/`, `docs/`) — TODO: name
-TODO: which tool, and for what (test design, contract checks, reports).
+### Integration and testing (`tests/`, `docs/`) — Abdullah Demirel
+OpenAI Codex assisted Abdullah Demirel with repository analysis, pytest infrastructure, GeoJSON and coordinate validation, Flask test-client checks against pinned backend revisions, and Node-based frontend flow tests. The tests covered request formatting, error responses, CORS, same-cell routes, invalid geometry and metrics, and synthetic-grid pathfinding; findings and retest results were recorded in integration notes, test reports and end-to-end checklists. Tests were run locally, with failures and skipped checks reported explicitly; backend tests used clearly labelled synthetic DEM fixtures (including a patched DEM loader), and frontend flow tests used Leaflet and HTTP test doubles, so this work did not establish real-DEM or browser-rendering correctness.
 
-### Documentation and presentation — TODO: name
-TODO: which tool, and for what (README, slides, video script).
-
+### Documentation and presentation — Yusuf Öztoprak and Yusuf Tunç
+The README, the integration guide (`docs/integration.md`), the submission text (`docs/submission.md`) and the demo script were drafted with Claude and then edited and fact-checked by the team. All numbers in them (route times, distances, test results) were measured on our running system. Presentation screenshots are captures of the running app, not AI-generated images. Slides: TODO — which tool, and whether AI was used.
 ## What was not AI-generated
 - All map imagery, elevation data and rover photos are NASA/USGS data products, credited in `data_sources.md`. We did not generate or alter any imagery with AI.
 - Science-point coordinates come from NASA's Perseverance waypoint data, not from AI output.

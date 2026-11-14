@@ -7,14 +7,32 @@
 // Mars verisi Web Mercator DEĞİL, eşdikdörtgen (enlem/boylam) ızgarada.
 // L.CRS.EPSG4326'nın tile ızgarası (zoom 0 = 2x1 tile, sol üst -180,90)
 // NASA'nın default028mm ızgarasıyla birebir aynı; bu yüzden tms/{-y} gerekmez.
+// Telefon gibi dar ekran mı? (Sayfa açılırken bir kez bakılır; CSS'teki
+// @media (max-width: 600px) ile aynı sınır.)
+const DAR_EKRAN = window.matchMedia("(max-width: 600px)").matches;
+
+// Leaflet'in EPSG4326'sı mesafeyi DÜNYA yarıçapıyla (6371 km) ölçer; ölçek
+// çubuğu bu yüzden Mars'ta ~1,88 kat yanlış çıkardı. Tile ızgarası aynı
+// kalsın, sadece yarıçap Mars olsun (backend'deki Mars 2000 küresiyle aynı: 3396190 m).
+const MARS_CRS = L.extend({}, L.CRS.EPSG4326, { R: 3396190 });
+
 const map = L.map("map", {
-  crs: L.CRS.EPSG4326,
+  crs: MARS_CRS,
   center: MAP_CENTER,
   zoom: MAP_ZOOM,
   maxZoom: HIRISE.maxZoom,
 });
 
 // ---------- 2) Katmanlar ----------
+// MOLA altlığı (tüm Mars): HiRISE kutusunun dışı siyah kalmasın diye.
+// zIndex 0 → panelden kapatıp açınca bile her zaman HiRISE'ın (zIndex 1) altında kalır.
+const molaKatmani = L.tileLayer(MOLA.url, {
+  attribution: MOLA.attribution,
+  maxNativeZoom: MOLA.maxNativeZoom,
+  maxZoom: HIRISE.maxZoom,
+  zIndex: 0,
+}).addTo(map);
+
 // HiRISE görüntü katmanı. "bounds" sayesinde kapsama dışı için istek atılmaz.
 const hiriseLayer = L.tileLayer(HIRISE.url, {
   attribution: HIRISE.attribution,
@@ -23,8 +41,8 @@ const hiriseLayer = L.tileLayer(HIRISE.url, {
   bounds: HIRISE.bounds,
 }).addTo(map);
 
-// HiRISE'ın kapsadığı alanı kesikli çizgiyle gösteren kutu. Kullanıcı bu
-// kutunun dışının neden siyah olduğunu anlasın diye. interactive:false →
+// HiRISE'ın kapsadığı alanı kesikli çizgiyle gösteren kutu. Kullanıcı
+// yüksek çözünürlüklü görüntünün nerede bittiğini görsün diye. interactive:false →
 // tıklamaları engellemez, tıklama haritaya geçer.
 const kapsamaKutusu = L.rectangle(HIRISE.bounds, {
   color: "#ffcc00", weight: 1, dashArray: "6 4", fill: false, interactive: false,
@@ -37,10 +55,11 @@ const bilimKatmani = L.layerGroup().addTo(map);
 // Katman aç/kapa kontrolü (sağ üst). Değişkende tutuyoruz ki sonradan
 // yüklenen katmanlar (eğim haritası) addOverlay ile eklenebilsin.
 const katmanKontrol = L.control.layers(null, {
+  "MOLA renkli yükseklik (tüm Mars, 463 m)": molaKatmani,
   "HiRISE Jezero (25 cm)": hiriseLayer,
   "HiRISE kapsama sınırı": kapsamaKutusu,
   "Bilim noktaları (Perseverance)": bilimKatmani,
-}, { collapsed: false }).addTo(map);
+}, { collapsed: DAR_EKRAN }).addTo(map); // telefonda katman paneli simgeye küçülür
 
 L.control.scale({ imperial: false }).addTo(map);
 
@@ -83,7 +102,8 @@ fetch(SLOPE_OVERLAY.metaUrl)
       interactive: false, className: "egim-katmani",
     });
     egimKatmani.on("error", () => console.warn("Eğim resmi yüklenemedi:", SLOPE_OVERLAY.url));
-    egimLejanti = new EgimLejanti({ position: "bottomright", sinir });
+    // Telefonda alt köşeler rota özetine yetmiyor; lejant sol üste (zoom düğmelerinin altına) gider.
+    egimLejanti = new EgimLejanti({ position: DAR_EKRAN ? "topleft" : "bottomright", sinir });
     katmanKontrol.addOverlay(egimKatmani, "Eğim tehlikesi (CTX DEM, 20 m)");
     if (SLOPE_OVERLAY.showOnStart) map.addLayer(egimKatmani); // overlayadd → lejant da açılır
   })
@@ -106,6 +126,8 @@ const durum = new DurumKontrol({ position: "bottomleft" }).addTo(map);
 function durumGoster(metin, tur = "") {
   durum._div.className = "durum-kutusu" + (tur ? " " + tur : "");
   durum._div.textContent = metin;
+  // Hesaplanırken imleç "bekleniyor" olur (CSS: .rota-hesaplaniyor)
+  map.getContainer().classList.toggle("rota-hesaplaniyor", tur === "yukleniyor");
 }
 
 // ---------- 4) Tıklama durumu ----------
@@ -210,9 +232,13 @@ function rotaGeometrisiAl(veri) {
 // L.geoJSON, GeoJSON'un [boylam, enlem] sırasını Leaflet'in [enlem, boylam]
 // sırasına kendisi çevirir. Sadece doğrulanmış geometri buraya gelir.
 function rotaCiz(geometri, ozellikler) {
-  rotaKatmani = L.geoJSON(geometri, {
-    style: { color: "#00e5ff", weight: 4, opacity: 0.9 },
-  }).addTo(map);
+  // İki katmanlı çizgi: altta koyu, kalın bir "kenar", üstte camgöbeği çizgi.
+  // Böylece rota sarı/turuncu eğim katmanının ve açık renkli arazinin
+  // üstünde de (projektörde bile) net seçilir.
+  rotaKatmani = L.featureGroup([
+    L.geoJSON(geometri, { style: { color: "#002b36", weight: 8, opacity: 0.7 } }),
+    L.geoJSON(geometri, { style: { color: "#00e5ff", weight: 4.5, opacity: 1 } }),
+  ]).addTo(map);
 
   const m = rotaMetrikleri(ozellikler);
   rotaKatmani.bindPopup(`Mesafe: ${m.mesafe} · Süre: ${m.sure} · Maks. eğim: ${m.egim}`);

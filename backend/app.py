@@ -31,6 +31,10 @@ if nodata is not None:
     cost_grid[elevation == nodata] = np.inf
 GRID_HEIGHT, GRID_WIDTH = elevation.shape
 H_SCALE = float(np.min(cost_grid[np.isfinite(cost_grid)]))
+# Longest straight-line distance we route in one request. A 21 km walk already
+# takes ~14 h, so longer requests are not realistic single EVAs, and very long
+# searches (~117 km) take over a minute and time out in the frontend.
+MAX_ROUTE_KM = 30.0
 
 
 def lonlat_to_xy(lon, lat):
@@ -64,22 +68,30 @@ def lonlat_to_pixel(lat, lon):
         return None
     return row, col
 
+def surface_distance_km(lat1, lon1, lat2, lon2):
+    """Great-circle distance on the Mars 2000 sphere (haversine), in km."""
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    dp = p2 - p1
+    dl = math.radians(lon2 - lon1)
+    a = math.sin(dp / 2) ** 2 + math.cos(p1) * math.cos(p2) * math.sin(dl / 2) ** 2
+    return 2 * MARS_RADIUS_M * math.asin(math.sqrt(a)) / 1000
 
 def path_stats(path):
-    """Compute total distance (km), estimated time (hours), and max slope (deg) along a path."""
+    """Compute total distance (km), estimated time (hours), and max slope (deg) along a path.
+
+    Zero-length steps (the repeated cell of a same-cell route) add no distance or time.
+    """
     distance_m = 0.0
     time_s = 0.0
-    max_slope = 0.0
-    for i in range(1, len(path)):
-        r0, c0 = path[i - 1]
-        r1, c1 = path[i]
+    max_slope = float(slope_deg[path[0]])
+    for (r0, c0), (r1, c1) in zip(path, path[1:]):
+        if (r0, c0) == (r1, c1):
+            continue
         diag = 1.4142 if (r1 != r0 and c1 != c0) else 1.0
         distance_m += cellsize * diag
         time_s += cost_grid[r1, c1] * diag
         max_slope = max(max_slope, float(slope_deg[r1, c1]))
     return round(distance_m / 1000, 3), round(time_s / 3600, 3), round(max_slope, 1)
-
-
 def _as_number(value):
     """Accept only finite JSON numbers (rejects strings, booleans, NaN, inf)."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
@@ -111,6 +123,10 @@ def route():
     if start_rc is None or end_rc is None:
         return jsonify({"error": "koordinat DEM kapsama alanının dışında"}), 422
 
+
+
+    if surface_distance_km(start_lat, start_lon, end_lat, end_lon) > MAX_ROUTE_KM:
+        return jsonify({"error": f"iki nokta arası {MAX_ROUTE_KM:.0f} km'den uzun; daha yakın iki nokta seçin"}), 422
     path = astar(cost_grid, start_rc, end_rc, h_scale=H_SCALE)
     if path is None:
         return jsonify({"error": "güvenli rota bulunamadı (çok dik arazi)"}), 422
@@ -150,4 +166,4 @@ def handle_unexpected_error(e):
 
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    app.run(debug=False, port=5000)
