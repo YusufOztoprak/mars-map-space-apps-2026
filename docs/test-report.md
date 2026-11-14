@@ -1,113 +1,86 @@
-# Aşama 2 test raporu
+# Integration and test report
 
-## Aşama 5 ve 6 — hazırlık
+## Submission refresh — current root test run
 
-[Uçtan uca plan](e2e-plan.md) 12 manuel senaryo içerir; tamamı henüz SKIP.
-Bu sayılar pytest toplamına eklenmez. [Geçici durum raporu](readiness-report.md)
-bulguları, sahiplerini ve sunum öncesi teslim koşullarını kaydeder.
-Gerçek DEM ve frontend akışı doğrulanmadığından Aşama 5 tamamlanmadı;
-Aşama 6 final raporu da henüz kesinleştirilmedi.
+Current main snapshot: `e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583`.
+The integration branch was synchronized with main; main's current AI disclosure was preserved.
+Root `python -m pytest -v --tb=short`: **54 PASS, 0 FAIL, 7 SKIP** (0.76 s), without source-directory overrides. Six skips are pending requirements; one is the upstream real-DEM module skipped because this checkout has no DEM.
+Frontend `node --test tests/frontend-flow.cjs`: **12 PASS, 0 FAIL** (183.566 ms), pinned to the same revision without a source override.
+The real-DEM clean-install result below (12 PASS) belongs to earlier revision `b23c168`, not a new real-DEM execution of e880bcc.
+After two fetch checks, the announced `backend/tests/test_routing.py` and corner-cutting fix were not present in origin/main e880bcc. Their verification remains pending publication; the team should send the exact commit if it was pushed elsewhere.
+The remaining sections document the earlier clean-install rehearsal and its limitations. Chrome/phone acceptance remains pending.
 
-## Aşama 4 — hazırlık tamam, uygulama testi bekliyor
 
-14 Kasım 2026 tarihinde uzak branch kayıtları tekrar güncellendi.
-origin/main ve origin/backend-rota içinde frontend kodu bulunmadı;
-başka uzak branch görünmüyor. Tarayıcıda iki nokta seçme, POST, rota çizme
-ve hata gösterimi çalıştırılmadı. Aşama 4 tamamlanmış sayılmaz.
-[Frontend kontrol listesi](frontend-checklist.md) içinde 14 manuel senaryo
-SKIP olarak listelendi; bunlar pytest toplamına eklenmedi.
-Kod değişmediği için önceki otomatik testler yeniden çalıştırılmadı.
-Son otomatik sonuç: 43 PASS, 4 FAIL, 6 SKIP (Aşama 3).
+Updated: 14 November 2026 (Europe/Istanbul).
+Tested main revision: `b23c168fe72958c7e86e56ffdec61897bc6df19c`.
+Working branch: `entegrasyon-test`. Product source files were not modified.
+This report supersedes earlier revision-specific findings; it is not a claim that every later main revision has been tested.
 
-## Aşama 3 — backend snapshot incelemesi
+## Latest results
 
-14 Kasım 2026: backend `79261e3` (origin/backend-rota) salt okunur incelendi.
-main veya backend branch'i merge edilmedi; backend kaynakları değiştirilmedi.
-Gerçek Flask test client ve gerçek A* kullanıldı; gerçek DEM değil sentetik grid.
-Son çalıştırma: **43 PASS, 4 FAIL, 6 SKIP** (53 durum, 0.53 saniye).
-Python 3.12.14, pytest 9.2.0, Flask 3.1.3, flask-cors 6.0.5, NumPy 2.5.4.
-Başarısız kontroller önerilen gereksinimlerle uyumsuzlukları gösterir;
-ekipçe onaylanmış bir API sözleşmesi bulunduğu iddia edilmiyor.
+| Suite | PASS | FAIL | SKIP | Evidence |
+| --- | ---: | ---: | ---: | --- |
+| Integration/contract pytest suite | 54 | 0 | 6 | [Full output](backend-test-output.txt) |
+| Frontend application-flow tests (Node) | 12 | 0 | 0 | [Full output](frontend-test-output.txt) |
+| Upstream backend tests with the real CTX DEM | 12 | 0 | 0 | [Full output](real-dem-test-output.txt) |
 
-| Backend testi | Sonuç |
-| --- | --- |
-| test_actual_success | PASS |
-| test_invalid_request (5 gövdenin her biri) | PASS (5) |
-| test_outside_coverage | PASS |
-| test_no_path (maliyet gridi testte engellendi) | PASS |
-| test_allowed_preflight (örnek localhost:5173 origin'i) | PASS |
-| test_unapproved_origin_rejected | FAIL: keyfi origin'e izin veriliyor |
-| test_numeric_strings_rejected | FAIL: string koordinatlar 200 alıyor |
-| test_same_cell_valid_linestring | FAIL: tek konumlu LineString dönüyor |
-| test_unexpected_error_json (testte hesaplama hatası enjekte edildi) | FAIL: 500 yanıtı HTML |
-| test_synthetic_grid_alternative_and_blocked | PASS: sentetik eğim, engelden kaçınma, alternatif yol ve yol yok |
+These are separate executions with overlapping coverage, not 78 unique acceptance criteria.
+Integration pytest took 0.91 seconds, Node tests 138 ms, and the real-DEM backend suite 3.27 seconds. These are suite durations, not route-performance benchmarks.
 
-Öncelikler: aynı hücre yanıtını ve JSON hata yakalamayı backend sorumlusu
-düzeltmeli; origin listesi frontend'in gerçek portuna göre daraltılmalı;
-sayısal string kabulünün sözleşmesi netleştirilmeli. Eşik 28° sabit;
-yapılandırılabilir 25° prototip parametresi önerisi iletilmeli.
-Gerçek DEM yükleme hataları ve gerçek coğrafi doğruluk henüz test edilemiyor.
-Uç noktalar hücreye snap ediliyor; kesin başlangıç/bitiş toleransı kararlaştırılmalı.
-Güncel tam test çıktısı: [backend-test-output.txt](backend-test-output.txt).
-Alttaki 33 PASS / 20 SKIP tablosu Aşama 2'nin tarihsel sonucudur;
-karşılığı yazılan SKIP yer tutucuları Aşama 3'te kaldırılmıştır.
+## Methods and reproduction
 
-Tarih: 14 Kasım 2026. Branch: `entegrasyon-test`.
-Ortam: Windows, Python 3.12.14, pytest 9.2.0; proje içindeki `.venv`.
-Komut: `.venv\Scripts\python.exe -m pytest -v --tb=short`
+The snapshot fixture reads the pinned backend revision, imports the real Flask application, and replaces only `dem_utils.load_dem` before import with a flat 200 x 200 synthetic grid and a 20 m affine transform. Real routing, slope and coordinate-conversion code runs; this suite does not verify actual DEM loading.
 
-Sonuç: **33 PASS, 0 FAIL, 20 SKIP** (53 durum, 0.07 saniye).
+For a downloaded source snapshot, `BACKEND_SNAPSHOT_DIR` may point to its backend folder. The caller must record and verify its source revision. The latest execution used the clean clone at `C:/Users/Abdullah/Desktop/nasa/dry-run-2026-11-14`.
 
-## Çalıştırılan kontroller
+```powershell
+# From the integration working checkout, using its Python environment:
+$env:BACKEND_SNAPSHOT_DIR = 'C:\Users\Abdullah\Desktop\nasa\dry-run-2026-11-14\backend'
+.venv\Scripts\python.exe -m pytest -v --tb=short
+$env:FRONTEND_SNAPSHOT_DIR = 'C:\Users\Abdullah\Desktop\nasa\dry-run-2026-11-14\frontend'
+node --test tests/frontend-flow.cjs
+# Remove these overrides to use the Git revisions pinned in each test file.
+```
 
-| Test / parametreler | Sonuç |
-| --- | --- |
-| test_synthetic_response | PASS |
-| test_endpoint_order (doğru sıra ve ters sıra reddi) | PASS |
-| test_reject_invalid_positions[coordinates0..coordinates8] — boş liste, tek nokta, boylam taşması, enlem taşması, string, bool, NaN, sonsuz, eksik bileşen | Her biri PASS (9) |
-| test_reject_invalid_metrics — distance_km, estimated_time_hours, max_slope_deg alanlarının her biri için -1, None, string '1', True, NaN, sonsuz | Her kombinasyon PASS (18) |
-| test_reject_invalid_structure[type-FeatureCollection] | PASS |
-| test_reject_invalid_structure[geometry-None] | PASS |
-| test_reject_invalid_structure[properties-value2] (boş properties) | PASS |
-| test_reject_impossible_slope | PASS |
+Node tests execute the unmodified frontend JavaScript with HTTP, Leaflet, DOM and viewport doubles. They verify application logic, not browser rendering, network CORS enforcement or mobile layout. The frontend source override was used for the same clean-clone revision.
 
-## Bekleyen gereksinimler
+The upstream backend suite ran in the clean clone's separate Python environment, without the synthetic loader patch:
 
-Aşağıdakilerin her biri SKIP: gerçek uygulama kodu veya DEM yoktur.
-Bunlar uygulanmış entegrasyon testleri değil, izlenebilir gereksinim yer tutucularıdır.
+```powershell
+.venv\Scripts\python.exe -m pytest backend/tests -v --tb=short
+```
 
-| Senaryo | Sonuç |
-| --- | --- |
-| valid_request_200 | SKIP |
-| missing_start_400 | SKIP |
-| missing_end_400 | SKIP |
-| invalid_coordinate_types_400 | SKIP |
-| missing_lat_lon_400 | SKIP |
-| unsupported_coordinate_domain_422 | SKIP |
-| outside_dem_422 | SKIP |
-| no_path_422 | SKIP |
-| missing_dem_503 | SKIP |
-| dem_read_error | SKIP |
-| unexpected_error_500 | SKIP |
-| allowed_origin_preflight | SKIP |
-| disallowed_origin | SKIP |
-| route_inside_dem | SKIP |
-| synthetic_grid_avoids_steep_cells | SKIP |
-| synthetic_grid_alternative_path | SKIP |
-| synthetic_grid_no_path | SKIP |
-| mars_distance_and_projection | SKIP |
-| frontend_post_draw_replace | SKIP |
-| frontend_network_server_invalid_response_errors | SKIP |
+## Verified fixes and behavior
 
-## Yorum ve sonraki adım
+| Check | Result | Verification scope |
+| --- | --- | --- |
+| Valid route and GeoJSON contract | PASS | Synthetic snapshot; upstream real-DEM route tests |
+| Invalid/missing coordinates | PASS | Invalid types, strings, booleans and non-finite values checked in snapshot tests |
+| Allowed/disallowed CORS origins | PASS | Flask preflight responses; localhost:8000 allowed, arbitrary origin rejected |
+| Same-cell geometry | PASS | Two-coordinate LineString |
+| Identical-point distance and time | PASS | Both zero; earlier 0.02 km regression resolved |
+| Unexpected calculation error | PASS | Injected error returns JSON HTTP 500 |
+| 20-degree threshold | PASS | 20 degrees traversable; 20.1 degrees blocked in synthetic grid |
+| Alternate path/no path | PASS | Synthetic obstacle grid |
+| Real DEM loading and route endpoints | PASS | Clean-clone upstream tests |
+| Mars one-degree surface distance | PASS | Upstream analytic-distance check |
+| Request limit | PASS | Upstream test lowers configured limit and checks 422; not a 30 km benchmark |
 
-Başarı yalnızca önerilen sözleşmeyi denetleyen yardımcıların sentetik örneklerle
-çalıştığını gösterir. HTTP 200, CORS, A*, gerçek yükseklik/eğim/mesafe, DEM kapsamı
-ve haritada çizim doğrulanmadı. Sentetik bir yükseklik matrisiyle algoritma testi de
-henüz çalıştırılmadı; backend algoritmasının çağrı arayüzü bekleniyor.
-Örnek rota gerçek Mars ölçümü değildir. Sözleşme ekipçe onaylanmış değildir.
+The old 28-degree assertion, missing Pillow dependency, missing team list and README screenshot placeholder were corrected in this revision. The referenced screenshot file exists in the clone. Older failure outputs and the general review describe earlier revisions and must not be treated as current results.
 
-Aşama 3 için backend giriş modülü, çalıştırma komutu/portu, bağımlılıklar,
-gerçek istek/yanıt biçimi ve DEM yapılandırması gereklidir.
-Mevcut frontend/backend veya ortak dokümantasyon dosyaları değiştirilmedi.
-Commit ve push yapılmadı.
+## Clean installation evidence
+
+- Clean clone: `C:/Users/Abdullah/Desktop/nasa/dry-run-2026-11-14`.
+- Separate environment: Python 3.12.14; backend requirements installed successfully, including Pillow.
+- DEM downloaded from the README's USGS URL: 90,345,300 bytes.
+- SHA-256: `BA7F706EA1B5D63A562F28A7DCF7A7F3C79BCE7F048E6974B57E8A33C30D1BA2`, matching README.
+- Actual backend and static frontend servers started on ports 5000 and 8000.
+- Windows `python` resolves to an unusable Store alias here; the bundled Python executable was used to create the environment. This machine-specific setup deviation must be checked on the demo computer.
+
+## Pending checks
+
+Six pytest requirements remain skipped: missing DEM, DEM read error, full route coverage within the real DEM, independent Mars/projection verification, real browser draw/reset flow, and browser error handling. Some have partial coverage elsewhere; the placeholders themselves were not executed and remain SKIP.
+
+Windows Chrome automation stopped because the tool could not reliably determine the current browser URL for policy enforcement. No successful Chrome or physical-phone walkthrough is claimed. This computer is not the demo computer, as confirmed by the user.
+
+Independent frontend verification is detailed in [frontend-checklist.md](frontend-checklist.md). See [e2e-plan.md](e2e-plan.md) for the 21:00 demo-machine handoff. Real overlay alignment, all-route NoData avoidance, mobile interactions, and weighted-A* performance/optimality claims remain unverified by this integration workflow.

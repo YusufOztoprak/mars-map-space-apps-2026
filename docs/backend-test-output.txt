@@ -2,113 +2,67 @@
 platform win32 -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Scripts\python.exe
 cachedir: .pytest_cache
 rootdir: C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026
-collecting ... collected 53 items
+collecting ... collected 60 items / 1 skipped
 
 tests/test_backend_snapshot.py::test_actual_success PASSED               [  1%]
 tests/test_backend_snapshot.py::test_invalid_request[body0] PASSED       [  3%]
 tests/test_backend_snapshot.py::test_invalid_request[body1] PASSED       [  5%]
-tests/test_backend_snapshot.py::test_invalid_request[body2] PASSED       [  7%]
-tests/test_backend_snapshot.py::test_invalid_request[body3] PASSED       [  9%]
-tests/test_backend_snapshot.py::test_invalid_request[body4] PASSED       [ 11%]
-tests/test_backend_snapshot.py::test_outside_coverage PASSED             [ 13%]
-tests/test_backend_snapshot.py::test_no_path PASSED                      [ 15%]
-tests/test_backend_snapshot.py::test_allowed_preflight PASSED            [ 16%]
-tests/test_backend_snapshot.py::test_unapproved_origin_rejected FAILED   [ 18%]
-tests/test_backend_snapshot.py::test_numeric_strings_rejected FAILED     [ 20%]
-tests/test_backend_snapshot.py::test_same_cell_valid_linestring FAILED   [ 22%]
-tests/test_backend_snapshot.py::test_unexpected_error_json FAILED        [ 24%]
-tests/test_backend_snapshot.py::test_synthetic_grid_alternative_and_blocked PASSED [ 26%]
-tests/test_contract.py::test_synthetic_response PASSED                   [ 28%]
-tests/test_contract.py::test_endpoint_order PASSED                       [ 30%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates0] PASSED [ 32%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates1] PASSED [ 33%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates2] PASSED [ 35%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates3] PASSED [ 37%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates4] PASSED [ 39%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates5] PASSED [ 41%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates6] PASSED [ 43%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates7] PASSED [ 45%]
-tests/test_contract.py::test_reject_invalid_positions[coordinates8] PASSED [ 47%]
-tests/test_contract.py::test_reject_invalid_metrics[-1-distance_km] PASSED [ 49%]
-tests/test_contract.py::test_reject_invalid_metrics[-1-estimated_time_hours] PASSED [ 50%]
-tests/test_contract.py::test_reject_invalid_metrics[-1-max_slope_deg] PASSED [ 52%]
-tests/test_contract.py::test_reject_invalid_metrics[None-distance_km] PASSED [ 54%]
-tests/test_contract.py::test_reject_invalid_metrics[None-estimated_time_hours] PASSED [ 56%]
-tests/test_contract.py::test_reject_invalid_metrics[None-max_slope_deg] PASSED [ 58%]
-tests/test_contract.py::test_reject_invalid_metrics[1-distance_km] PASSED [ 60%]
-tests/test_contract.py::test_reject_invalid_metrics[1-estimated_time_hours] PASSED [ 62%]
-tests/test_contract.py::test_reject_invalid_metrics[1-max_slope_deg] PASSED [ 64%]
-tests/test_contract.py::test_reject_invalid_metrics[True-distance_km] PASSED [ 66%]
-tests/test_contract.py::test_reject_invalid_metrics[True-estimated_time_hours] PASSED [ 67%]
-tests/test_contract.py::test_reject_invalid_metrics[True-max_slope_deg] PASSED [ 69%]
-tests/test_contract.py::test_reject_invalid_metrics[nan-distance_km] PASSED [ 71%]
-tests/test_contract.py::test_reject_invalid_metrics[nan-estimated_time_hours] PASSED [ 73%]
-tests/test_contract.py::test_reject_invalid_metrics[nan-max_slope_deg] PASSED [ 75%]
-tests/test_contract.py::test_reject_invalid_metrics[inf-distance_km] PASSED [ 77%]
-tests/test_contract.py::test_reject_invalid_metrics[inf-estimated_time_hours] PASSED [ 79%]
-tests/test_contract.py::test_reject_invalid_metrics[inf-max_slope_deg] PASSED [ 81%]
-tests/test_contract.py::test_reject_invalid_structure[type-FeatureCollection] PASSED [ 83%]
-tests/test_contract.py::test_reject_invalid_structure[geometry-None] PASSED [ 84%]
-tests/test_contract.py::test_reject_invalid_structure[properties-value2] PASSED [ 86%]
-tests/test_contract.py::test_reject_impossible_slope PASSED              [ 88%]
-tests/test_pending_integration.py::test_pending_requirement[missing_dem_503] SKIPPED [ 90%]
-tests/test_pending_integration.py::test_pending_requirement[dem_read_error] SKIPPED [ 92%]
-tests/test_pending_integration.py::test_pending_requirement[route_inside_real_dem] SKIPPED [ 94%]
+tests/test_backend_snapshot.py::test_invalid_request[body2] PASSED       [  6%]
+tests/test_backend_snapshot.py::test_invalid_request[body3] PASSED       [  8%]
+tests/test_backend_snapshot.py::test_invalid_request[body4] PASSED       [ 10%]
+tests/test_backend_snapshot.py::test_outside_coverage PASSED             [ 11%]
+tests/test_backend_snapshot.py::test_no_path PASSED                      [ 13%]
+tests/test_backend_snapshot.py::test_allowed_preflight PASSED            [ 15%]
+tests/test_backend_snapshot.py::test_unapproved_origin_rejected PASSED   [ 16%]
+tests/test_backend_snapshot.py::test_numeric_strings_rejected PASSED     [ 18%]
+tests/test_backend_snapshot.py::test_same_cell_valid_linestring PASSED   [ 20%]
+tests/test_backend_snapshot.py::test_unexpected_error_json PASSED        [ 21%]
+tests/test_backend_snapshot.py::test_identical_point_has_zero_travel PASSED [ 23%]
+tests/test_backend_snapshot.py::test_nonfinite_and_bool_rejected[True] PASSED [ 25%]
+tests/test_backend_snapshot.py::test_nonfinite_and_bool_rejected[False] PASSED [ 26%]
+tests/test_backend_snapshot.py::test_nonfinite_and_bool_rejected[nan] PASSED [ 28%]
+tests/test_backend_snapshot.py::test_nonfinite_and_bool_rejected[inf] PASSED [ 30%]
+tests/test_backend_snapshot.py::test_nonfinite_and_bool_rejected[-inf] PASSED [ 31%]
+tests/test_backend_snapshot.py::test_twenty_degree_threshold PASSED      [ 33%]
+tests/test_backend_snapshot.py::test_synthetic_grid_alternative_and_blocked PASSED [ 35%]
+tests/test_contract.py::test_synthetic_response PASSED                   [ 36%]
+tests/test_contract.py::test_endpoint_order PASSED                       [ 38%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates0] PASSED [ 40%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates1] PASSED [ 41%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates2] PASSED [ 43%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates3] PASSED [ 45%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates4] PASSED [ 46%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates5] PASSED [ 48%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates6] PASSED [ 50%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates7] PASSED [ 51%]
+tests/test_contract.py::test_reject_invalid_positions[coordinates8] PASSED [ 53%]
+tests/test_contract.py::test_reject_invalid_metrics[-1-distance_km] PASSED [ 55%]
+tests/test_contract.py::test_reject_invalid_metrics[-1-estimated_time_hours] PASSED [ 56%]
+tests/test_contract.py::test_reject_invalid_metrics[-1-max_slope_deg] PASSED [ 58%]
+tests/test_contract.py::test_reject_invalid_metrics[None-distance_km] PASSED [ 60%]
+tests/test_contract.py::test_reject_invalid_metrics[None-estimated_time_hours] PASSED [ 61%]
+tests/test_contract.py::test_reject_invalid_metrics[None-max_slope_deg] PASSED [ 63%]
+tests/test_contract.py::test_reject_invalid_metrics[1-distance_km] PASSED [ 65%]
+tests/test_contract.py::test_reject_invalid_metrics[1-estimated_time_hours] PASSED [ 66%]
+tests/test_contract.py::test_reject_invalid_metrics[1-max_slope_deg] PASSED [ 68%]
+tests/test_contract.py::test_reject_invalid_metrics[True-distance_km] PASSED [ 70%]
+tests/test_contract.py::test_reject_invalid_metrics[True-estimated_time_hours] PASSED [ 71%]
+tests/test_contract.py::test_reject_invalid_metrics[True-max_slope_deg] PASSED [ 73%]
+tests/test_contract.py::test_reject_invalid_metrics[nan-distance_km] PASSED [ 75%]
+tests/test_contract.py::test_reject_invalid_metrics[nan-estimated_time_hours] PASSED [ 76%]
+tests/test_contract.py::test_reject_invalid_metrics[nan-max_slope_deg] PASSED [ 78%]
+tests/test_contract.py::test_reject_invalid_metrics[inf-distance_km] PASSED [ 80%]
+tests/test_contract.py::test_reject_invalid_metrics[inf-estimated_time_hours] PASSED [ 81%]
+tests/test_contract.py::test_reject_invalid_metrics[inf-max_slope_deg] PASSED [ 83%]
+tests/test_contract.py::test_reject_invalid_structure[type-FeatureCollection] PASSED [ 85%]
+tests/test_contract.py::test_reject_invalid_structure[geometry-None] PASSED [ 86%]
+tests/test_contract.py::test_reject_invalid_structure[properties-value2] PASSED [ 88%]
+tests/test_contract.py::test_reject_impossible_slope PASSED              [ 90%]
+tests/test_pending_integration.py::test_pending_requirement[missing_dem_503] SKIPPED [ 91%]
+tests/test_pending_integration.py::test_pending_requirement[dem_read_error] SKIPPED [ 93%]
+tests/test_pending_integration.py::test_pending_requirement[route_inside_real_dem] SKIPPED [ 95%]
 tests/test_pending_integration.py::test_pending_requirement[mars_distance_and_projection] SKIPPED [ 96%]
 tests/test_pending_integration.py::test_pending_requirement[frontend_post_draw_replace] SKIPPED [ 98%]
 tests/test_pending_integration.py::test_pending_requirement[frontend_network_server_invalid_response_errors] SKIPPED [100%]
 
-================================== FAILURES ===================================
-_______________________ test_unapproved_origin_rejected _______________________
-tests\test_backend_snapshot.py:89: in test_unapproved_origin_rejected
-    assert 'Access-Control-Allow-Origin' not in response.headers
-E   AssertionError: assert 'Access-Control-Allow-Origin' not in Headers([('Content-Type', 'text/html; charset=utf-8'), ('Allow', 'OPTIONS, POST'), ('Access-Control-Allow-Origin', 'https://unapproved.example'), ('Access-Control-Allow-Methods', 'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'), ('Vary', 'Origin'), ('Content-Length', '0')])
-E    +  where Headers([('Content-Type', 'text/html; charset=utf-8'), ('Allow', 'OPTIONS, POST'), ('Access-Control-Allow-Origin', 'https://unapproved.example'), ('Access-Control-Allow-Methods', 'DELETE, GET, HEAD, OPTIONS, PATCH, POST, PUT'), ('Vary', 'Origin'), ('Content-Length', '0')]) = <WrapperTestResponse streamed [200 OK]>.headers
-________________________ test_numeric_strings_rejected ________________________
-tests\test_backend_snapshot.py:95: in test_numeric_strings_rejected
-    assert client.post('/route', json=body).status_code == 400
-E   AssertionError: assert 200 == 400
-E    +  where 200 = <WrapperTestResponse streamed [200 OK]>.status_code
-E    +    where <WrapperTestResponse streamed [200 OK]> = post('/route', json={'start': {'lat': '18.4', 'lon': '77.4'}, 'end': {'lat': 18.41, 'lon': 77.41}})
-E    +      where post = <FlaskClient <Flask 'review_backend'>>.post
-_______________________ test_same_cell_valid_linestring _______________________
-tests\test_backend_snapshot.py:104: in test_same_cell_valid_linestring
-    validate_route(response.get_json())
-tests\contract_helpers.py:18: in validate_route
-    raise ValueError('Expected at least two positions')
-E   ValueError: Expected at least two positions
-_________________________ test_unexpected_error_json __________________________
-tests\test_backend_snapshot.py:116: in test_unexpected_error_json
-    assert response.is_json
-E   assert False
-E    +  where False = <WrapperTestResponse streamed [500 INTERNAL SERVER ERROR]>.is_json
------------------------------- Captured log call ------------------------------
-ERROR    review_backend:app.py:875 Exception on /route [POST]
-Traceback (most recent call last):
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Lib\site-packages\flask\app.py", line 1511, in wsgi_app
-    response = self.full_dispatch_request()
-               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Lib\site-packages\flask\app.py", line 919, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Lib\site-packages\flask_cors\extension.py", line 206, in wrapped_function
-    return cors_after_request(app_any.make_response(f(*args, **kwargs)))
-                                                    ^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Lib\site-packages\flask\app.py", line 917, in full_dispatch_request
-    rv = self.dispatch_request()
-         ^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\.venv\Lib\site-packages\flask\app.py", line 902, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\AppData\Local\Packages\OpenAI.Codex_2p2nqsd0c76g0\AC\#!sandbox.{f00a2f43-d728-44ef-87a1-c23cb6155f25}\Temp\pytest-of-Abdullah\pytest-0\backend_snapshot0\app.py", line 83, in route
-    path = astar(cost_grid, start_rc, end_rc)
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "C:\Users\Abdullah\Desktop\nasa\mars-map-space-apps-2026\tests\test_backend_snapshot.py", line 111, in fail
-    raise RuntimeError('injected calculation failure')
-RuntimeError: injected calculation failure
-=========================== short test summary info ===========================
-FAILED tests/test_backend_snapshot.py::test_unapproved_origin_rejected - Asse...
-FAILED tests/test_backend_snapshot.py::test_numeric_strings_rejected - Assert...
-FAILED tests/test_backend_snapshot.py::test_same_cell_valid_linestring - Valu...
-FAILED tests/test_backend_snapshot.py::test_unexpected_error_json - assert False
-=================== 4 failed, 43 passed, 6 skipped in 0.53s ===================
+======================== 54 passed, 7 skipped in 0.76s ========================

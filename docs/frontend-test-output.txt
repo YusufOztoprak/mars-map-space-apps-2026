@@ -1,0 +1,54 @@
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Geçersiz rota metriği distance_km: -1
+Geçersiz rota metriği distance_km: -1
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Geçersiz rota metriği distance_km: NaN
+Geçersiz rota metriği distance_km: NaN
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Geçersiz rota metriği distance_km: Infinity
+Geçersiz rota metriği distance_km: Infinity
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Geçersiz rota metriği distance_km: 1
+Geçersiz rota metriği distance_km: 1
+Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
+Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
+Geçersiz rota metriği distance_km: true
+Geçersiz rota metriği distance_km: true
+✔ click sequence, request mapping, route metrics and reset (16.9126ms)
+✔ HTTP 400 does not draw (0.9749ms)
+✔ HTTP 422 does not draw (0.7417ms)
+✔ HTTP 500 does not draw (0.6984ms)
+✔ HTTP 503 does not draw (0.7047ms)
+✔ network error is recoverable (0.7235ms)
+✔ malformed successful geometry must not reach Leaflet (0.721ms)
+✔ invalid metric -1 is not displayed as valid (0.9434ms)
+✔ invalid metric NaN is not displayed as valid (0.8943ms)
+✔ invalid metric Infinity is not displayed as valid (0.8334ms)
+✔ invalid metric 1 is not displayed as valid (0.7941ms)
+✔ invalid metric true is not displayed as valid (0.7394ms)
+ℹ tests 12
+ℹ suites 0
+ℹ pass 12
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 183.566
