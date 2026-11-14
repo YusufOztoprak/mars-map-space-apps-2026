@@ -110,26 +110,26 @@ def parse_point(obj):
 def route():
     data = request.get_json(silent=True)
     if not data or "start" not in data or "end" not in data:
-        return jsonify({"error": "istek gövdesi 'start' ve 'end' içermeli"}), 400
+        return jsonify({"error": "request body must include 'start' and 'end'"}), 400
 
     try:
         start_lat, start_lon = parse_point(data["start"])
         end_lat, end_lon = parse_point(data["end"])
     except (KeyError, TypeError, ValueError):
-        return jsonify({"error": "start/end {'lat': float, 'lon': float} formatında olmalı"}), 400
+        return jsonify({"error": "start and end must be {'lat': number, 'lon': number}"}), 400
 
     start_rc = lonlat_to_pixel(start_lat, start_lon)
     end_rc = lonlat_to_pixel(end_lat, end_lon)
     if start_rc is None or end_rc is None:
-        return jsonify({"error": "koordinat DEM kapsama alanının dışında"}), 422
+        return jsonify({"error": "point is outside the elevation model coverage"}), 422
 
 
 
     if surface_distance_km(start_lat, start_lon, end_lat, end_lon) > MAX_ROUTE_KM:
-        return jsonify({"error": f"iki nokta arası {MAX_ROUTE_KM:.0f} km'den uzun; daha yakın iki nokta seçin"}), 422
+        return jsonify({"error": f"points are more than {MAX_ROUTE_KM:.0f} km apart; choose two closer points"}), 422
     path = astar(cost_grid, start_rc, end_rc, h_scale=H_SCALE)
     if path is None:
-        return jsonify({"error": "güvenli rota bulunamadı (çok dik arazi)"}), 422
+        return jsonify({"error": "no safe route found (terrain too steep)"}), 422
 
     if len(path) == 1:
         path = [path[0], path[0]]  # degenerate case: start and end in the same cell
@@ -162,7 +162,7 @@ def handle_http_exception(e):
 @app.errorhandler(Exception)
 def handle_unexpected_error(e):
     app.logger.exception("Unexpected error")
-    return jsonify({"error": "sunucu hatası, lütfen tekrar deneyin"}), 500
+    return jsonify({"error": "server error, please try again"}), 500
 
 
 if __name__ == "__main__":

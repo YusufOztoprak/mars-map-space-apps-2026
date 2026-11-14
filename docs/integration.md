@@ -26,7 +26,7 @@ Flask REST API that computes a safety-aware walking route between two points in 
 - `max_slope_deg` never exceeds 20.
 
 ### Errors
-Always JSON: `{"error": "<message>"}` (message text is Turkish).
+Always JSON: `{"error": "<message>"}`.
 
 | Status | Meaning |
 |---|---|
