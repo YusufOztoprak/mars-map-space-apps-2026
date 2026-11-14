@@ -34,14 +34,60 @@ const kapsamaKutusu = L.rectangle(HIRISE.bounds, {
 // (bkz. bölüm 7). Boş da olsa katman listesinde görünür.
 const bilimKatmani = L.layerGroup().addTo(map);
 
-// Katman aç/kapa kontrolü (sağ üst).
-L.control.layers(null, {
+// Katman aç/kapa kontrolü (sağ üst). Değişkende tutuyoruz ki sonradan
+// yüklenen katmanlar (eğim haritası) addOverlay ile eklenebilsin.
+const katmanKontrol = L.control.layers(null, {
   "HiRISE Jezero (25 cm)": hiriseLayer,
   "HiRISE kapsama sınırı": kapsamaKutusu,
   "Bilim noktaları (Perseverance)": bilimKatmani,
 }, { collapsed: false }).addTo(map);
 
 L.control.scale({ imperial: false }).addTo(map);
+
+// ---------- 2b) Eğim tehlike haritası ----------
+// Önce JSON'dan sınırları okur, sonra PNG'yi o sınırlara gerer.
+// Dosyalar yoksa harita normal çalışır, panelde bu katman görünmez.
+let egimKatmani = null;
+
+// Lejant (sağ alt): sadece eğim katmanı açıkken görünür.
+const EgimLejanti = L.Control.extend({
+  onAdd: function () {
+    const d = L.DomUtil.create("div", "durum-kutusu egim-lejant");
+    const baslik = document.createElement("div");
+    baslik.className = "baslik"; baslik.textContent = "Eğim (rotanın kullandığı veri)";
+    d.append(baslik);
+    SLOPE_OVERLAY.siniflar.forEach((s) => {
+      const satir = document.createElement("div");
+      const kare = document.createElement("span");
+      kare.className = "kare"; kare.style.background = s.renk;
+      satir.append(kare, document.createTextNode(s.metin.replaceAll("{sinir}", this.options.sinir)));
+      d.append(satir);
+    });
+    return d;
+  },
+});
+let egimLejanti = null;
+map.on("overlayadd", (e) => { if (e.layer === egimKatmani && egimLejanti) egimLejanti.addTo(map); });
+map.on("overlayremove", (e) => { if (e.layer === egimKatmani && egimLejanti) egimLejanti.remove(); });
+
+fetch(SLOPE_OVERLAY.metaUrl)
+  .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then((meta) => {
+    const sinir = meta.slope_limit_deg;
+    if (sinir !== SLOPE_THRESHOLD_DEG) {
+      console.warn(`Eğim sınırı uyuşmuyor: overlay ${sinir}°, config.js ${SLOPE_THRESHOLD_DEG}°`);
+    }
+    // interactive:false → üstüne tıklamak haritaya tıklama sayılır (rota seçimi bozulmaz).
+    // className → CSS'te "pixelated": 20 m'lik hücreler bulanıklaşmadan görünür.
+    egimKatmani = L.imageOverlay(SLOPE_OVERLAY.url, meta.bounds, {
+      interactive: false, className: "egim-katmani",
+    });
+    egimKatmani.on("error", () => console.warn("Eğim resmi yüklenemedi:", SLOPE_OVERLAY.url));
+    egimLejanti = new EgimLejanti({ position: "bottomright", sinir });
+    katmanKontrol.addOverlay(egimKatmani, "Eğim tehlikesi (CTX DEM, 20 m)");
+    if (SLOPE_OVERLAY.showOnStart) map.addLayer(egimKatmani); // overlayadd → lejant da açılır
+  })
+  .catch((hata) => console.warn("Eğim katmanı bulunamadı (" + SLOPE_OVERLAY.metaUrl + "):", hata.message));
 
 // ---------- 3) Durum kutusu (sol alt) ----------
 // Kullanıcıya talimat, "hesaplanıyor" ve hata mesajlarını gösterir.
@@ -168,28 +214,65 @@ function rotaCiz(geometri, ozellikler) {
     style: { color: "#00e5ff", weight: 4, opacity: 0.9 },
   }).addTo(map);
 
-  const ozet = rotaOzeti(ozellikler);
-  rotaKatmani.bindPopup(ozet);
-  durumGoster(ozet + "  (Yeni rota için haritaya tıklayın.)");
-  map.fitBounds(rotaKatmani.getBounds(), { padding: [40, 40] });
+  const m = rotaMetrikleri(ozellikler);
+  rotaKatmani.bindPopup(`Mesafe: ${m.mesafe} · Süre: ${m.sure} · Maks. eğim: ${m.egim}`);
+  rotaKutusuGoster(m);
+  // maxZoom: çok kısa rotada (ör. başlangıç ve bitiş aynı DEM hücresinde,
+  // backend 2 aynı noktalı çizgi döner) harita en yakın zoom'a zıplamasın.
+  map.fitBounds(rotaKatmani.getBounds(), { padding: [40, 40], maxZoom: 16 });
 }
 
-// Backend'in properties alanlarını okunur metne çevirir.
+// Backend'in properties alanlarını okunur metinlere çevirir.
 // Alan yok → "—". Alan var ama sayısal/sonlu/negatif-olmayan değil → "geçersiz"
 // (yanlış bir sayıyı, ör. negatif mesafeyi, kullanıcıya göstermeyiz).
-function rotaOzeti(p) {
-  const sayi = (ad, birim) => {
+function rotaMetrikleri(p) {
+  const metin = (ad, bicim) => {
     const v = p[ad];
     if (v === undefined || v === null) return "—";
     if (!sonluSayi(v) || v < 0) {
       console.warn(`Geçersiz rota metriği ${ad}:`, v);
       return "geçersiz";
     }
-    return v.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) + " " + birim;
+    return bicim(v);
   };
-  return `Mesafe: ${sayi("distance_km", "km")} · ` +
-         `Süre: ${sayi("estimated_time_hours", "saat")} · ` +
-         `Maks. eğim: ${sayi("max_slope_deg", "°")}`;
+  const tr = (v, basamak) => v.toLocaleString("tr-TR", { maximumFractionDigits: basamak });
+  // Saati "1 sa 43 dk" biçimine çevirir (1,72 saat'ten daha kolay okunur).
+  const saatDakika = (saat) => {
+    const dk = Math.round(saat * 60);
+    return dk < 60 ? `${dk} dk` : `${Math.floor(dk / 60)} sa ${dk % 60} dk`;
+  };
+  return {
+    mesafe: metin("distance_km", (v) => tr(v, 2) + " km"),
+    sure: metin("estimated_time_hours", saatDakika),
+    egim: metin("max_slope_deg", (v) => tr(v, 1) + "°"),
+  };
+}
+
+// Sol alttaki kutuyu rota özetine çevirir: başlık + 3 metrik + ipucu.
+// DOM ile kuruluyor (textContent), sunucudan gelen hiçbir şey HTML olarak yorumlanmaz.
+function rotaKutusuGoster(m) {
+  const d = durum._div;
+  d.className = "durum-kutusu rota-ozeti";
+  const satir = (etiket, deger, not) => {
+    const s = document.createElement("div");
+    s.className = "metrik";
+    const e = document.createElement("span"); e.className = "etiket"; e.textContent = etiket;
+    const v = document.createElement("b"); v.textContent = deger;
+    s.append(e, v);
+    if (not) { const n = document.createElement("span"); n.className = "not"; n.textContent = not; s.append(n); }
+    return s;
+  };
+  const baslik = document.createElement("div");
+  baslik.className = "baslik"; baslik.textContent = "Güvenli yürüyüş rotası";
+  const ipucu = document.createElement("div");
+  ipucu.className = "ipucu"; ipucu.textContent = "Yeni rota için haritaya tıklayın.";
+  d.replaceChildren(
+    baslik,
+    satir("Mesafe", m.mesafe),
+    satir("Tahmini süre", m.sure, "Tobler yürüyüş modeli"),
+    satir("Maks. eğim", m.egim, `eşik: ${SLOPE_THRESHOLD_DEG}°`),
+    ipucu,
+  );
 }
 
 // ---------- 7) Bilim noktaları ----------
