@@ -1,0 +1,5 @@
+pytest>=8,<10
+# Optional backend snapshot suite (rasterio is not needed for synthetic DEM):
+flask>=3,<4
+flask-cors>=6,<7
+numpy>=2,<3
