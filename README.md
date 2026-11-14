@@ -98,7 +98,7 @@ tests/      Integration and contract test suite
 
 ## Team
 
-TODO: team name and members with roles (Backend/Routing, Frontend/Map, Data/Content, Integration/Test, Documentation/Presentation).
+Data/Content: Eren YILMAZ and Emirsultan BOĞATEKİN. Team name and the remaining role assignments are awaiting confirmation.
 
 ## AI usage
 
