@@ -125,11 +125,9 @@ async function rotaIste(start, end) {
       const mesaj = veri && veri.error ? veri.error : `Sunucu hatası (HTTP ${yanit.status}).`;
       throw new Error(mesaj);
     }
-    if (!veri || (!veri.geometry && !veri.coordinates && !veri.features)) {
-      throw new Error("Sunucudan geçerli bir rota gelmedi.");
-    }
-
-    rotaCiz(veri);
+    // Çizmeden önce geometriyi doğrula; bozuksa hata fırlatır (catch'e düşer).
+    const geometri = rotaGeometrisiAl(veri);
+    rotaCiz(geometri, (veri && veri.properties) || {});
   } catch (hata) {
     if (hata.name === "AbortError" && !zamanAsimi) return; // kullanıcı sıfırladı, sessiz geç
     let mesaj = hata.message;
@@ -142,27 +140,56 @@ async function rotaIste(start, end) {
   }
 }
 
-// ---------- 6) Rotayı çizme ----------
+// ---------- 6) Yanıtı doğrulama ve rotayı çizme ----------
+// Sonlu (NaN/Infinity olmayan) gerçek bir sayı mı?
+const sonluSayi = (v) => typeof v === "number" && Number.isFinite(v);
+
+// Kabul edilen yanıt: GeoJSON Feature (backend'in formatı) ya da çıplak
+// LineString. Geometri LineString olmalı ve en az 2 geçerli [boylam, enlem]
+// içermeli. Değilse hata fırlatır; rota haritaya ÇİZİLMEZ.
+function rotaGeometrisiAl(veri) {
+  const hatali = new Error("Sunucudan geçersiz bir rota geldi.");
+  if (!veri || typeof veri !== "object") throw hatali;
+  const g = veri.type === "Feature" ? veri.geometry : veri;
+  if (!g || g.type !== "LineString" || !Array.isArray(g.coordinates)) throw hatali;
+  if (g.coordinates.length < 2) throw hatali; // tek nokta çizgi değildir
+  // GeoJSON sırası [boylam, enlem]: c[0] boylam (−180…180), c[1] enlem (−90…90).
+  const gecerliNokta = (c) => Array.isArray(c) && c.length >= 2 &&
+    sonluSayi(c[0]) && sonluSayi(c[1]) &&
+    Math.abs(c[0]) <= 180 && Math.abs(c[1]) <= 90;
+  if (!g.coordinates.every(gecerliNokta)) throw hatali;
+  return g;
+}
+
 // L.geoJSON, GeoJSON'un [boylam, enlem] sırasını Leaflet'in [enlem, boylam]
-// sırasına kendisi çevirir. Feature, FeatureCollection ve çıplak LineString kabul eder.
-function rotaCiz(geojson) {
-  rotaKatmani = L.geoJSON(geojson, {
+// sırasına kendisi çevirir. Sadece doğrulanmış geometri buraya gelir.
+function rotaCiz(geometri, ozellikler) {
+  rotaKatmani = L.geoJSON(geometri, {
     style: { color: "#00e5ff", weight: 4, opacity: 0.9 },
   }).addTo(map);
 
-  const ozet = rotaOzeti(geojson.properties || {});
+  const ozet = rotaOzeti(ozellikler);
   rotaKatmani.bindPopup(ozet);
   durumGoster(ozet + "  (Yeni rota için haritaya tıklayın.)");
   map.fitBounds(rotaKatmani.getBounds(), { padding: [40, 40] });
 }
 
-// Backend'in properties alanlarını okunur metne çevirir; eksik alan → "—".
+// Backend'in properties alanlarını okunur metne çevirir.
+// Alan yok → "—". Alan var ama sayısal/sonlu/negatif-olmayan değil → "geçersiz"
+// (yanlış bir sayıyı, ör. negatif mesafeyi, kullanıcıya göstermeyiz).
 function rotaOzeti(p) {
-  const sayi = (v, birim) =>
-    typeof v === "number" ? v.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) + " " + birim : "—";
-  return `Mesafe: ${sayi(p.distance_km, "km")} · ` +
-         `Süre: ${sayi(p.estimated_time_hours, "saat")} · ` +
-         `Maks. eğim: ${sayi(p.max_slope_deg, "°")}`;
+  const sayi = (ad, birim) => {
+    const v = p[ad];
+    if (v === undefined || v === null) return "—";
+    if (!sonluSayi(v) || v < 0) {
+      console.warn(`Geçersiz rota metriği ${ad}:`, v);
+      return "geçersiz";
+    }
+    return v.toLocaleString("tr-TR", { maximumFractionDigits: 2 }) + " " + birim;
+  };
+  return `Mesafe: ${sayi("distance_km", "km")} · ` +
+         `Süre: ${sayi("estimated_time_hours", "saat")} · ` +
+         `Maks. eğim: ${sayi("max_slope_deg", "°")}`;
 }
 
 // ---------- 7) Bilim noktaları ----------
