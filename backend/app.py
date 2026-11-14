@@ -66,20 +66,21 @@ def lonlat_to_pixel(lat, lon):
 
 
 def path_stats(path):
-    """Compute total distance (km), estimated time (hours), and max slope (deg) along a path."""
+    """Compute total distance (km), estimated time (hours), and max slope (deg) along a path.
+
+    Zero-length steps (the repeated cell of a same-cell route) add no distance or time.
+    """
     distance_m = 0.0
     time_s = 0.0
-    max_slope = 0.0
-    for i in range(1, len(path)):
-        r0, c0 = path[i - 1]
-        r1, c1 = path[i]
+    max_slope = float(slope_deg[path[0]])
+    for (r0, c0), (r1, c1) in zip(path, path[1:]):
+        if (r0, c0) == (r1, c1):
+            continue
         diag = 1.4142 if (r1 != r0 and c1 != c0) else 1.0
         distance_m += cellsize * diag
         time_s += cost_grid[r1, c1] * diag
         max_slope = max(max_slope, float(slope_deg[r1, c1]))
     return round(distance_m / 1000, 3), round(time_s / 3600, 3), round(max_slope, 1)
-
-
 def _as_number(value):
     """Accept only finite JSON numbers (rejects strings, booleans, NaN, inf)."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):

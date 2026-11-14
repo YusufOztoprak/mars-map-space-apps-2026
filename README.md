@@ -4,9 +4,7 @@ NASA Space Apps Challenge 2026 · Challenge: **Interplanetary Survival Guide: Ma
 
 Click two points in Jezero Crater, Mars, and get a walking route computed in real time from orbital elevation data. The route avoids slopes steeper than 20° and reports distance, estimated walking time and the steepest slope along the way. A slope-hazard layer shows why the route bends, and Perseverance science sites show what an explorer could study on the walk.
 
-![Route through the delta front with the slope-hazard layer on]
-(docs/screenshots/03-slope-hazard-layer-delta.png)
-
+![Route through the delta front with the slope-hazard layer on](docs/screenshots/03-slope-hazard-layer-delta.png)
 ## Features
 
 - **Live route computation:** weighted A* on a 20 m/pixel elevation model; a 20 km route takes about 2 seconds.
@@ -97,9 +95,10 @@ docs/       Integration guide, test reports, submission draft
 tests/      Integration and contract test suite
 ```
 
-## Team
-
-TODO: team name and members with roles (Backend/Routing, Frontend/Map, Data/Content, Integration/Test, Documentation/Presentation).
+- **Yusuf Öztoprak** — Backend & routing; documentation & presentation
+- **Yusuf Tunç** — Frontend & map; documentation & presentation
+- **Eren Yılmaz** and **Emirsultan Boğatekin** — Data & content
+- **Abdullah Demirel** — Integration & testing
 
 ## AI usage
 
