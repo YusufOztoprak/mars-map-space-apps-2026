@@ -1,51 +1,63 @@
-# Aşama 6 — geçici entegrasyon/test durum raporu
+# Demo readiness report
 
-14 Kasım 2026. Bu dosya final kabul raporu değil; ekip için mevcut durum özetidir.
-README, sunum veya diğer ekip üyelerinin dosyaları değiştirilmedi.
+## Submission refresh — current root test run
 
-## Kanıtlanan davranış
+Current main snapshot: `e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583`.
+The integration branch was synchronized with main; main's current AI disclosure was preserved.
+Root `python -m pytest -v --tb=short`: **54 PASS, 0 FAIL, 7 SKIP** (0.76 s), without source-directory overrides. Six skips are pending requirements; one is the upstream real-DEM module skipped because this checkout has no DEM.
+Frontend `node --test tests/frontend-flow.cjs`: **12 PASS, 0 FAIL** (183.566 ms), pinned to the same revision without a source override.
+The real-DEM clean-install result below (12 PASS) belongs to earlier revision `b23c168`, not a new real-DEM execution of e880bcc.
+After two fetch checks, the announced `backend/tests/test_routing.py` and corner-cutting fix were not present in origin/main e880bcc. Their verification remains pending publication; the team should send the exact commit if it was pushed elsewhere.
+The remaining sections document the earlier clean-install rehearsal and its limitations. Chrome/phone acceptance remains pending.
 
-Backend `79261e3` sürümünde gerçek Flask test client ile sentetik DEM üzerinde
-başarılı rota, geçersiz istek, kapsam dışı nokta, yol yok ve preflight test edildi.
-Sentetik grid üzerinde eğim hesabı, dik hücreden kaçınma, alternatif yol ve yol
-yok kontrolü geçti. Sözleşme doğrulama yardımcıları da test edildi.
-Son otomatik sonuç: **43 PASS, 4 FAIL, 6 SKIP**.
-Tam kanıt: [test raporu](test-report.md), [pytest çıktısı](backend-test-output.txt).
-Bu hazırlıkta kod değişmediği için testler tekrar çalıştırılmadı.
 
-## Açık bulgular ve sahipleri
+Updated: 14 November 2026 (Europe/Istanbul).
+Verified revision: `b23c168fe72958c7e86e56ffdec61897bc6df19c`.
 
-| Konu | Gereken işlem | Sorumlu |
+## Decision
+
+**Backend and local clean-install checks passed. Final demo acceptance remains pending Chrome and physical-phone checks on the actual demo computer.** This is a rehearsal on a different computer, not the scheduled 21:00 demo-machine sign-off.
+
+## Verified evidence
+
+| Area | Status | Evidence |
 | --- | --- | --- |
-| Aynı hücrede tek konumlu LineString | Geçerli sonuç veya kontrollü hata; sonra yeniden test | Backend; doğrulama entegrasyon/test |
-| Beklenmeyen hatada HTML 500 | Kararlı JSON hata yanıtı | Backend |
-| CORS tüm origin'lere açık | Gerçek frontend portuna göre izin listesi | Backend + frontend |
-| Sayısal string kabulü | Giriş türlerini ekipçe kararlaştırma; test/sözleşmeyi hizalama | Backend + frontend |
-| Gerçek DEM bağlı değil | Veri ve projeksiyon bilgilerini teslim etme; yükleyiciye bağlama | Veri/içerik + backend |
-| Sabit 28° eşik | Yapılandırılabilir prototip parametresini kararlaştırma | Backend |
-| Frontend akışı test edilmedi | Kod/komut/port geldikten sonra Aşama 4 | Frontend; doğrulama entegrasyon/test |
-| Coğrafi doğruluk kanıtlanmadı | Tile/DEM hizası, Mars metriği, NoData ve snap doğrulaması | Veri + backend; doğrulama entegrasyon/test |
+| Snapshot/contract tests | PASS | 54 passed, 0 failed, 6 skipped |
+| Frontend flow logic | PASS with doubles | 12 passed; no browser rendering claim |
+| Real CTX DEM backend tests | PASS | 12 passed in clean-clone environment |
+| Clean clone and dependencies | PASS | Separate folder/environment; Pillow included |
+| DEM download/integrity | PASS | README SHA-256 matched |
+| Backend/frontend startup | PASS | Ports 5000/8000 started |
+| Actual demo computer | PENDING | Different machine; must repeat setup there |
+| Chrome end-to-end demo | BLOCKED in this run | Automation could not identify browser URL safely |
+| Physical phone | PENDING | No device walkthrough performed |
 
-## Sunum öncesi sıra
+Detailed evidence and commands: [test-report.md](test-report.md).
 
-1. Frontend commit'i ve çalıştırma bilgileri alınır; [Aşama 4 listesi](frontend-checklist.md) uygulanır.
-2. Backend bulguları ilgili geliştirici tarafından ele alınır; yeni kesin sürüm yeniden test edilir.
-3. Gerçek DEM hazırsa [Aşama 5 planı](e2e-plan.md) çalıştırılır.
-4. Demo için çalışan sürümler, kurulum komutları ve veri modu sabitlenir.
-5. Test toplamları ve açık hatalar bu raporda güncellenir; ondan sonra final rapor hazırlanır.
+## Resolved findings
 
-## Sunumda kullanılabilecek mevcut ifade
+The four original API findings are closed at the tested revision: restricted CORS, strict finite JSON-number coordinates, two-position same-cell geometry, and JSON 500 responses. The later same-point 0.02 km bug is also fixed: distance and time are zero. Backend tests now use the current slope threshold and skip explicitly without the real DEM. Pillow, README team names and committed screenshots are present.
 
-“Sentetik yükseklik verisi üzerinde rota algoritması ve API için otomatik
-kontroller çalıştırıldı. Frontend entegrasyonu ve gerçek Mars DEM doğrulaması
-devam ediyor; dört API/sözleşme uyumsuzluğu raporlandı.”
+## Remaining release risks and owners
 
-Gerçek DEM kullanıldı, NASA güvenlik eşiği doğrulandı veya uygulama tamamen
-test edildi ifadeleri şu an kanıtlanmıyor. DEM yetişmezse sentetik prototip
-olarak sunma kararı ekipçe alınmalı; gerçek veri hedefi tamamlandı sayılmamalı.
+| Risk | Next action | Owner |
+| --- | --- | --- |
+| Demo hardware differs | Repeat README setup and record revision/hash | Integration/test + demo operator |
+| Windows Python alias | Verify usable Python/pip before the run | Demo operator |
+| Chrome/phone flow unverified | Execute and record the independent checklist | Integration/test + phone operator |
+| Phone API address | `localhost:5000` means the phone itself; choose an agreed deployment/proxy strategy and test it | Frontend/backend owners |
+| LAN origin rejected | Current CORS allows only localhost/127.0.0.1:8000, not a LAN IP origin | Backend owner |
+| Server reachability | Backend currently binds loopback; do not assume phone access | Backend owner/demo operator |
+| Overlay/DEM alignment | Independently sample route cells and overlay reference points | Integration/test + data/backend |
+| Route quality/performance claims | Save representative benchmark and reference-path comparison evidence | Backend; independent verification by integration/test |
+| Missing/corrupt DEM | Test controlled startup failure and clear recovery instructions | Backend + integration/test |
 
-## Git ve teslim durumu
+No product code, firewall or access settings were changed to address phone access. A responsive desktop viewport is not a physical-phone result.
 
-Çalışma branch'i `entegrasyon-test`. Dosyalar henüz commit edilmedi.
-Push, PR ve merge yapılmadı. Commit öncesi dosya listesi gösterilecek;
-push için kullanıcının açık onayı beklenecek. Birleştirme ekip tarafından en son yapılacak.
+## Presentation wording
+
+We can state that clean setup and real-DEM backend tests passed, and that frontend application-flow tests passed with test doubles. We cannot yet claim that this integration run validated the complete Chrome/phone demo, every hazard-overlay cell, or the weighted-A* optimality/performance bounds.
+
+## Next gate
+
+Run the [21:00 checklist](e2e-plan.md) on the actual demo machine, attach Chrome/phone evidence, and update this decision. Keep DEM files out of Git. The latest report and test changes remain local until explicitly committed/pushed; no merge is performed as part of this documentation update.

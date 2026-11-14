@@ -1,0 +1,20 @@
+============================= test session starts =============================
+platform win32 -- Python 3.12.14, pytest-9.2.0, pluggy-1.7.0 -- C:\Users\Abdullah\Desktop\nasa\dry-run-2026-11-14\.venv\Scripts\python.exe
+cachedir: .pytest_cache
+rootdir: C:\Users\Abdullah\Desktop\nasa\dry-run-2026-11-14
+collecting ... collected 12 items
+
+backend/tests/test_route.py::test_health_check PASSED                    [  8%]
+backend/tests/test_route.py::test_valid_route PASSED                     [ 16%]
+backend/tests/test_route.py::test_route_ends_at_requested_points PASSED  [ 25%]
+backend/tests/test_route.py::test_same_cell_route_has_zero_length PASSED [ 33%]
+backend/tests/test_route.py::test_lng_alias_accepted PASSED              [ 41%]
+backend/tests/test_route.py::test_missing_end_returns_400 PASSED         [ 50%]
+backend/tests/test_route.py::test_missing_body_returns_400 PASSED        [ 58%]
+backend/tests/test_route.py::test_string_coordinates_return_400 PASSED   [ 66%]
+backend/tests/test_route.py::test_out_of_bounds_returns_422 PASSED       [ 75%]
+backend/tests/test_route.py::test_cors_allows_demo_origin_only PASSED    [ 83%]
+backend/tests/test_route.py::test_too_far_returns_422_quickly PASSED     [ 91%]
+backend/tests/test_route.py::test_surface_distance_one_degree_latitude PASSED [100%]
+
+============================= 12 passed in 3.27s ==============================
