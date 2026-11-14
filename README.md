@@ -4,8 +4,8 @@ NASA Space Apps Challenge 2026 · Challenge: **Interplanetary Survival Guide: Ma
 
 Click two points in Jezero Crater, Mars, and get a walking route computed in real time from orbital elevation data. The route avoids slopes steeper than 20° and reports distance, estimated walking time and the steepest slope along the way. A slope-hazard layer shows why the route bends, and Perseverance science sites show what an explorer could study on the walk.
 
-![Route through the delta front with the slope-hazard layer on](docs/screenshots/4_egim_rota_delta.png)
-<!-- TODO: confirm the screenshot file name once docs/screenshots/ is committed -->
+![Route through the delta front with the slope-hazard layer on]
+(docs/screenshots/03-slope-hazard-layer-delta.png)
 
 ## Features
 
@@ -23,7 +23,7 @@ Click two points in Jezero Crater, Mars, and get a walking route computed in rea
 | Base map, 25 cm/pixel | Mars Reconnaissance Orbiter / HiRISE | NASA Mars Trek |
 | Elevation, 20 m/pixel | Mars Reconnaissance Orbiter / CTX | USGS Mars 2020 Science Investigation CTX DEM mosaic |
 | Science sites and photos | Mars 2020 Perseverance | Perseverance waypoints and raw images |
-
+| Global context, 463 m/pixel | Mars Global Surveyor / MOLA | NASA Mars Trek |
 Full links and credits: [`data_sources.md`](data_sources.md).
 
 ## Quick start
@@ -74,6 +74,7 @@ API details: [`docs/integration.md`](docs/integration.md).
 - A 20 m elevation model cannot see boulders or small scarps, so real slopes can be steeper than the model shows. **The route is a planning aid, not a safety certification.**
 - The 20° limit is a conservative prototype parameter, not a NASA standard.
 - The 2.2 km/h walking pace is an adapted assumption, not measured astronaut performance.
+- The global MOLA layer (463 m/pixel) is visual context only; routing uses the 20 m CTX DEM.
 
 ## Future work
 
