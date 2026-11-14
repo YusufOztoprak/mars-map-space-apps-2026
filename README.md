@@ -60,6 +60,13 @@ Requirements: Python 3.10+, `curl`.
 4. **Safety limit:** cells steeper than 20° or without data are impassable.
 5. **Search:** weighted A* (weight 1.2). Route cost is guaranteed to be within 20% of the optimum; in our tests the difference was about 2%.
 
+| 1 · Elevation | 2 · Slope | 3 · Walking speed | 4 · Route |
+|---|---|---|---|
+| ![Elevation](docs/figures/method_1_elevation.png) | ![Slope](docs/figures/method_2_slope.png) | ![Walking speed](docs/figures/method_3_walking_speed.png) | ![Route](docs/figures/method_4_route.png) |
+| Blue = low crater floor, sand = higher delta | Yellow 10–15°, orange 15–20°, red > 20° | Light = fast, dark = slow, black = blocked | Fastest path that stays under 20° |
+
+*Rendered from the real CTX DEM around the delta front with `backend/make_method_panels.py`.*
+
 API details: [`docs/integration.md`](docs/integration.md).
 
 ## Testing
