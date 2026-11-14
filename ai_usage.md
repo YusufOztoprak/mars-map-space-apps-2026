@@ -1,5 +1,5 @@
 # AI Usage
 
-## Data & Content
+## Data & Content — Eren YILMAZ and Emirsultan BOĞATEKİN
 
-ChatGPT helped structure the supplied Perseverance waypoint records as GeoJSON, draft one-sentence English science summaries, and prepare attribution and Lake Salda copy. It also checked the Brac panorama dimensions and credit against NASA's resource page and the CTX DEM metadata against USGS. The NASA/USGS data and imagery were not AI-generated; source URLs and credits are retained alongside the data.
+Compiled five complete Perseverance science and mission waypoints into `data/science_points.json`, with approximate coordinates, image links and credits, and one-sentence English science summaries. Replaced Brac's small preview with a 1200-pixel NASA Mastcam-Z panorama derivative and downloaded the USGS 20 m/pixel CTX DEM outside Git for backend handoff. Updated `data_sources.md` with source credits, resolution limits, Leaflet BSD-2 and HiRISE attribution, the Lake Salda pitch, and the decision to defer global MOLA coverage. ChatGPT assisted with GeoJSON structuring, concise summaries, and attribution drafting; the mission imagery and science data remain original NASA/USGS products, with source links retained in the data files.
