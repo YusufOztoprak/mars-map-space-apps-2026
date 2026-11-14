@@ -24,8 +24,14 @@ We used AI tools to speed up research, coding and testing. Every AI-assisted out
 ### Backend (`backend/`) — Yusuf Öztoprak
 Code was drafted with Claude in a chat session, then reviewed, run, tested and integrated by the team. Claude helped with the Flask API structure, the lat/lon ↔ pixel conversion (derived from the DEM file's own CRS), the Tobler cost model, the A* search and its speed-up (benchmarked before adopting), error handling, pytest tests and the slope overlay script. Behavior was verified with automated tests and manual API and browser tests against the real DEM.
 
-### Frontend (`frontend/`) — TODO: name
-`index.html`, `config.js` and `app.js` were written together with Claude Code. Direction, requirements and approvals came from the team member. Testing: HiRISE tiles checked with curl (zoom 0–17 return images, zoom 18 returns 404); backend 200/400/422 responses and CORS checked with curl; end-to-end tests in headless Firefox (Playwright) covered route drawing, reset, error messages, science-point popups and the layer panel.
+### Frontend (`frontend/`) — Yusuf Tunç
+`index.html`, `config.js` and `app.js` were written with Claude Code (Claude Opus 5.5): the Leaflet map in EPSG:4326, the click-to-route flow, route-response validation, science-point popups, the slope-hazard layer with its legend, and the route summary box. Yusuf set the requirements, approved each plan before coding and made all commits. Claude ran every test before reporting results:
+- HiRISE tiles checked with curl (zoom 0–17 return images, zoom 18 returns 404).
+- Backend responses and CORS checked with curl.
+- 13 malformed-response cases tested in headless Firefox (Playwright).
+- 6,060 route points from the real DEM sampled against the slope overlay; none fell on a >20° cell.
+
+The presentation screenshots are captures of our running app, not AI-generated images.
 
 ### Data and content (`data/`, `data_sources.md`) — TODO: name
 TODO: which tool, and for what (finding Perseverance waypoints and images, writing science summaries, checking attributions).
