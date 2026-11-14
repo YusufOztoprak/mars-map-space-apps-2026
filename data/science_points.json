@@ -1,0 +1,144 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "brac-south-seitah",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.44301922,
+          18.43396406
+        ]
+      },
+      "properties": {
+        "name": "Brac / South Séítah",
+        "kind": "olivine_rich_igneous_site",
+        "observed_sol": 262,
+        "coordinate_waypoint_sol": 248,
+        "coordinate_accuracy": "Approximate regional marker",
+        "science_summary": "The olivine-rich Brac crater-floor rocks, sampled as Salette, help reveal Jezero's igneous history.",
+        "image_gallery_url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0262_0690210961_535EBY_N0080000ZCAM05068_1100LMJ",
+        "image_preview_url": "https://assets.science.nasa.gov/dynamicimage/assets/science/psd/mars/downloadable_items/4/6/46845_PIA24939_Fig-1.jpg?crop=faces%2Cfocalpoint&fit=scale-down&h=1200&w=1200",
+        "image_credit": "NASA/JPL-Caltech/ASU/MSSS",
+        "image_caption": "Natural-color Mastcam-Z panorama of the Brac area, captured between sols 255 and 265.",
+        "source_urls": [
+          "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/",
+          "https://science.nasa.gov/resource/mastcam-zs-view-of-the-area-around-brac-in-mars-jezero-crater/",
+          "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "hogwallow-flats",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.40614454,
+          18.4586918
+        ]
+      },
+      "properties": {
+        "name": "Hogwallow Flats",
+        "kind": "delta_sedimentary_outcrop",
+        "observed_sol": 461,
+        "coordinate_waypoint_sol": 461,
+        "coordinate_accuracy": "Rover end-of-drive waypoint in the target area",
+        "science_summary": "Fine-grained delta sediments at Hogwallow record ancient water transport and are promising places to study biosignature preservation.",
+        "image_gallery_url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZR0_0461_0707862611_428EBY_N0260470ZCAM08482_1100LMJ",
+        "image_preview_url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00461/ids/edr/browse/zcam/ZR0_0461_0707862611_428EBY_N0260470ZCAM08482_1100LMJ01_800.jpg",
+        "image_credit": "NASA/JPL-Caltech/ASU",
+        "image_caption": "Perseverance Sol 461, Right Mastcam-Z.",
+        "source_urls": [
+          "https://science.nasa.gov/resource/perseverances-mastcam-z-views-hogwallow-flats/",
+          "https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/",
+          "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "wildcat-ridge",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.40592495,
+          18.45864728
+        ]
+      },
+      "properties": {
+        "name": "Wildcat Ridge",
+        "kind": "delta_mudstone_sample_site",
+        "observed_sol": 509,
+        "coordinate_waypoint_sol": 502,
+        "coordinate_accuracy": "Approximate regional marker",
+        "science_summary": "This delta-front mudstone yielded the Hazeltop and Bearwallow cores, selected to study ancient environments and possible biosignatures.",
+        "image_gallery_url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0509_0712140650_691ECM_N0261222NCAM00709_09_095J",
+        "image_preview_url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00509/ids/edr/browse/ncam/NLF_0509_0712140650_691ECM_N0261222NCAM00709_09_095J01_800.jpg",
+        "image_credit": "NASA/JPL-Caltech",
+        "image_caption": "Perseverance Sol 509, Left Navigation Camera; same-sol context image.",
+        "source_urls": [
+          "https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/",
+          "https://www.jpl.nasa.gov/videos/meet-the-mars-samples-hazeltop-and-bearwallow-samples-1213/",
+          "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "yori-pass",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.39915371,
+          18.45364399
+        ]
+      },
+      "properties": {
+        "name": "Yori Pass",
+        "kind": "delta_sandstone_outcrop",
+        "observed_sol": 615,
+        "coordinate_waypoint_sol": 609,
+        "coordinate_accuracy": "Approximate regional marker",
+        "science_summary": "Its water-transported sandstone is laterally equivalent to Hogwallow Flats, allowing comparison of related delta deposits.",
+        "image_gallery_url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/ZR0_0615_0721540472_488EBY_N0301172ZCAM08622_0340LMJ",
+        "image_preview_url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00615/ids/edr/browse/zcam/ZR0_0615_0721540472_488EBY_N0301172ZCAM08622_0340LMJ01_800.jpg",
+        "image_credit": "NASA/JPL-Caltech/ASU",
+        "image_caption": "Perseverance Sol 615, Right Mastcam-Z.",
+        "source_urls": [
+          "https://www.nasa.gov/missions/mars-2020-perseverance/perseverance-rover/nasas-perseverance-rover-investigates-intriguing-martian-bedrock/",
+          "https://science.nasa.gov/blog/a-picture-is-worth-a-thousand-words/",
+          "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "three-forks-sample-depot",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          77.4084479,
+          18.45336511
+        ]
+      },
+      "properties": {
+        "name": "Three Forks Sample Depot",
+        "kind": "sample_depot",
+        "observed_sol": 684,
+        "coordinate_waypoint_sol": 684,
+        "coordinate_accuracy": "Rover end-of-drive waypoint in the depot area",
+        "science_summary": "Perseverance placed ten mapped sample tubes here, making Three Forks an important sample-recovery waypoint.",
+        "image_gallery_url": "https://mars.nasa.gov/mars2020/multimedia/raw-images/SIF_0684_0727663715_964EBY_N0321050SRLC07021_0000LMJ",
+        "image_preview_url": "https://mars.nasa.gov/mars2020-raw-images/pub/ods/surface/sol/00684/ids/edr/browse/shrlc/SIF_0684_0727663715_964EBY_N0321050SRLC07021_0000LMJ01_800.jpg",
+        "image_credit": "NASA/JPL-Caltech",
+        "image_caption": "Perseverance Sol 684, WATSON camera.",
+        "source_urls": [
+          "https://science.nasa.gov/resource/perseverances-three-forks-sample-depot-map/",
+          "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json"
+        ]
+      }
+    }
+  ]
+}
