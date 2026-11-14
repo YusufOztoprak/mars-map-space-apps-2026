@@ -57,9 +57,10 @@ def path_stats(path):
 
 
 def parse_point(obj):
-    """Extract (lat, lon) floats from a {'lat':..,'lon':..} dict, or raise ValueError."""
+    """Extract (lat, lon) floats from a {'lat':..,'lon':..} or {'lat':..,'lng':..} dict."""
     lat = float(obj["lat"])
-    lon = float(obj["lon"])
+    lon_value = obj.get("lon", obj.get("lng"))
+    lon = float(lon_value)
     return lat, lon
 
 
