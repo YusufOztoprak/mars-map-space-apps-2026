@@ -97,3 +97,18 @@ def test_cors_allows_demo_origin_only(client):
     assert ok.headers.get("Access-Control-Allow-Origin") == "http://localhost:8000"
     other = client.options("/route", headers={"Origin": "https://example.com", **preflight})
     assert "Access-Control-Allow-Origin" not in other.headers
+
+
+
+def test_too_far_returns_422_quickly(client, monkeypatch):
+    import app as backend_app
+    monkeypatch.setattr(backend_app, "MAX_ROUTE_KM", 1.0)  # START-END is ~5 km apart
+    response = post_route(client, START, END)
+    assert response.status_code == 422
+    assert "error" in response.get_json()
+
+
+def test_surface_distance_one_degree_latitude():
+    import app as backend_app
+    km = backend_app.surface_distance_km(18.0, 77.0, 19.0, 77.0)
+    assert abs(km - 59.27) < 0.05  # 1 deg of latitude on Mars (R = 3396.19 km)

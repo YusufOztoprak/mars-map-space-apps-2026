@@ -31,7 +31,7 @@ Always JSON: `{"error": "<message>"}` (message text is Turkish).
 | Status | Meaning |
 |---|---|
 | 400 | Missing/malformed body or non-numeric coordinates |
-| 422 | Point outside DEM coverage or on a no-data cell, or no route exists under the slope limit |
+| 422 | Point outside DEM coverage or on a no-data cell, or no route exists under the slope limit, or the two points are more than 30 km apart |
 | 500 | Unexpected server error |
 
 `GET /health` → `{"status": "ok", "grid": [5067, 4456]}`

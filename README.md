@@ -73,6 +73,7 @@ API details: [`docs/integration.md`](docs/integration.md).
 - The 20° limit is a conservative prototype parameter, not a NASA standard.
 - The 2.2 km/h walking pace is an adapted assumption, not measured astronaut performance.
 - The global MOLA layer (463 m/pixel) is visual context only; routing uses the 20 m CTX DEM.
+- One request covers at most 30 km straight-line distance (a realistic single EVA); longer requests return 422.
 
 ## Future work
 
