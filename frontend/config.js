@@ -1,22 +1,22 @@
 // =====================================================================
-// config.js — Değişebilecek HER ŞEY burada. Başka dosyaya dokunmadan
-// backend adresini, istek formatını ve katman ayarlarını buradan değiştirin.
+// config.js — EVERYTHING that may change lives here. Change the backend
+// address, request format and layer settings here without touching other files.
 // =====================================================================
 
-// Backend rota servisinin adresi. Sunucu başka makinede/portta çalışırsa
-// sadece bu satırı değiştirin.
+// Address of the backend route service. If the server runs on another
+// machine/port, change only this line.
 const API_URL = "http://localhost:5000/route";
 
-// Backend cevap vermezse kaç milisaniye sonra vazgeçelim (30 sn).
+// Give up if the backend does not answer within this many milliseconds (30 s).
 const API_TIMEOUT_MS = 30000;
 
-// İstek gövdesini kuran TEK fonksiyon. Backend formatı değişirse yalnızca
-// burayı düzeltin. start/end, Leaflet'in L.LatLng nesneleridir.
-// DİKKAT: Alanları isimle (lat/lng) gönderiyoruz, dizi sırasına güvenmiyoruz;
-// böylece GeoJSON'un [boylam, enlem] sırasıyla karışma riski yok.
-// Boylamı hem "lng" (Leaflet adı) hem "lon" (backend'in ilk adı) olarak
-// gönderiyoruz: backend'in eski sürümü sadece "lon" okuyordu, yenisi ikisini
-// de kabul ediyor. Böylece backend'in hangi sürümü çalışırsa çalışsın 400 almayız.
+// The ONE function that builds the request body. If the backend format changes,
+// fix only this. start/end are Leaflet L.LatLng objects.
+// NOTE: fields are sent by name (lat/lng), not by array position, so there is
+// no risk of mixing them up with GeoJSON's [longitude, latitude] order.
+// Longitude is sent as both "lng" (Leaflet's name) and "lon" (the backend's
+// original name): an older backend read only "lon", the current one accepts
+// both. This way we never get a 400, whichever backend version is running.
 function buildRouteRequest(start, end) {
   return {
     start: { lat: start.lat, lng: start.lng, lon: start.lng },
@@ -24,65 +24,65 @@ function buildRouteRequest(start, end) {
   };
 }
 
-// MOLA renkli gölgeli yükseklik (tüm Mars, 463 m/piksel): HiRISE'ın altındaki
-// geniş ölçekli altlık. Sadece görsel bağlam; eğim/rota hesabında KULLANILMAZ
-// (rota 20 m CTX DEM ile hesaplanır).
-// Dikkat: uzantı .jpg (png 404 verir); en yüksek zoom 7 (8 → 404). curl ile doğrulandı.
-// Leaflet 8 ve üstünde z7 tile'larını büyüterek gösterir.
+// MOLA colour shaded relief (global Mars, 463 m/pixel): wide-area basemap under
+// HiRISE. Visual context only; NOT used for slope or routing
+// (routes are computed on the 20 m CTX DEM).
+// Note: the extension is .jpg (png returns 404); max zoom is 7 (8 → 404). Verified with curl.
+// From zoom 8 up, Leaflet scales the z7 tiles.
 const MOLA = {
   url: "https://trek.nasa.gov/tiles/Mars/EQ/Mars_MGS_MOLA_ClrShade_merge_global_463m/1.0.0//default/default028mm/{z}/{y}/{x}.jpg",
-  // !! Atıf metni veri rolünce Mars Trek katman sayfasından doğrulanacak.
+  // !! The data team will confirm this credit text on the Mars Trek layer page.
   attribution: "MOLA: NASA/JPL/GSFC",
   maxNativeZoom: 7,
 };
 
-// Backend'in eğim sınırı (backend/routing.py → SAFETY_THRESHOLD_DEG).
-// Sadece özet kutusunda bilgi olarak gösterilir; rotayı backend sınırlar.
-// Backend değeri değişirse burayı da güncelleyin.
+// The backend's slope limit (backend/routing.py → SAFETY_THRESHOLD_DEG).
+// Shown for information in the summary box only; the backend enforces it.
+// If the backend value changes, update it here too.
 const SLOPE_THRESHOLD_DEG = 20;
 
-// Veri rolünün hazırladığı bilim noktaları (GeoJSON FeatureCollection).
-// Yol sayfaya göredir: sayfa REPO KÖKÜNDEN sunulmalı
-// (repo kökünde "python -m http.server 8000" → http://localhost:8000/frontend/index.html),
-// yoksa ../data klasörüne erişilemez. Dosya bulunamazsa harita yine çalışır.
+// Science points prepared by the data team (GeoJSON FeatureCollection).
+// The path is relative to the page: serve the page FROM THE REPO ROOT
+// ("python -m http.server 8000" in the repo root → http://localhost:8000/frontend/index.html),
+// otherwise ../data cannot be reached. If the file is missing, the map still works.
 const SCIENCE_POINTS_URL = "../data/science_points.json";
 
-// Haritanın açılış görünümü: Jezero Krateri (HiRISE mozaiğinin ortası).
-const MAP_CENTER = [18.45, 77.40]; // Leaflet sırası: [enlem, boylam]
+// Initial map view: Jezero Crater (centre of the HiRISE mosaic).
+const MAP_CENTER = [18.45, 77.40]; // Leaflet order: [latitude, longitude]
 const MAP_ZOOM = 12;
 
-// NASA Mars Trek HiRISE Jezero ortomozaiği (25 cm/piksel).
-// Adresi DEĞİŞTİRMEYİN: çift "//" kasıtlı, sıra {z}/{y}/{x} (satır/sütun).
-// curl ile doğrulandı: z0..z17 var, z18 ve üstü 404 döner.
+// NASA Mars Trek HiRISE Jezero orthomosaic (25 cm/pixel).
+// DO NOT CHANGE the URL: the double "//" is intentional, order is {z}/{y}/{x} (row/column).
+// Verified with curl: z0..z17 exist, z18 and above return 404.
 const HIRISE = {
   url: "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0//default/default028mm/{z}/{y}/{x}.png",
-  // Kredi: data_sources.md → HiRISE kullanım politikası (uahirise.org/media/usage.php)
+  // Credit: data_sources.md → HiRISE image usage policy (uahirise.org/media/usage.php)
   attribution: "HiRISE: NASA/JPL/University of Arizona · NASA Mars Trek",
-  maxNativeZoom: 17, // Sunucudaki en yüksek gerçek zoom seviyesi
-  maxZoom: 19,       // 18-19'da Leaflet z17 tile'larını büyüterek gösterir
-  // Kapsama alanı (WMTSCapabilities.xml'deki LowerCorner/UpperCorner).
-  // Bu kutunun dışı için tile istenmez; dışarısı zaten boş/404'tür.
+  maxNativeZoom: 17, // highest real zoom level on the server
+  maxZoom: 19,       // at 18-19 Leaflet scales the z17 tiles
+  // Coverage (LowerCorner/UpperCorner in WMTSCapabilities.xml).
+  // No tiles are requested outside this box; outside is empty/404 anyway.
   bounds: [
-    [18.3067994, 77.2229331], // güneybatı köşe [enlem, boylam]
-    [18.669315, 77.583964],   // kuzeydoğu köşe
+    [18.3067994, 77.2229331], // south-west corner [latitude, longitude]
+    [18.669315, 77.583964],   // north-east corner
   ],
 };
 
-// Eğim tehlike haritası: backend/make_slope_overlay.py, rotanın kullandığı AYNI
-// eğim verisinden (CTX DEM, 20 m) bu iki dosyayı frontend/ içine üretir:
-//   slope_overlay.png  → renkli yarı saydam resim (saydamlık resmin içinde)
-//   slope_overlay.json → resmin enlem/boylam sınırları + eğim sınırı
-// Yollar sayfaya (frontend/index.html) göredir. DEM eşdikdörtgen olduğu için
-// L.imageOverlay resmi doğru yere oturtur.
+// Slope hazard map: backend/make_slope_overlay.py writes these two files into
+// frontend/ from the SAME slope data the router uses (CTX DEM, 20 m):
+//   slope_overlay.png  → coloured semi-transparent image (transparency is in the image)
+//   slope_overlay.json → lat/lon bounds of the image + slope limit
+// Paths are relative to the page (frontend/index.html). Because the DEM is
+// equirectangular, L.imageOverlay places the image correctly.
 const SLOPE_OVERLAY = {
   metaUrl: "slope_overlay.json",
   url: "slope_overlay.png",
-  showOnStart: false, // varsayılan kapalı; demoda panelden açılır
-  // Lejant renkleri make_slope_overlay.py'deki renklerle aynı.
-  // Sınır derecesi ({sinir}) slope_overlay.json'daki slope_limit_deg'den gelir.
-  siniflar: [
-    { renk: "#facc15", metin: "10–15° moderate" },
-    { renk: "#f97316", metin: "15–{sinir}° steep" },
-    { renk: "#dc2626", metin: "> {sinir}° blocked (route never enters)" },
+  showOnStart: false, // off by default; switched on from the layer panel in the demo
+  // Legend colours match the colours in make_slope_overlay.py.
+  // The limit ({limit}) comes from slope_limit_deg in slope_overlay.json.
+  classes: [
+    { color: "#facc15", label: "10–15° moderate" },
+    { color: "#f97316", label: "15–{limit}° steep" },
+    { color: "#dc2626", label: "> {limit}° blocked (route never enters)" },
   ],
 };
