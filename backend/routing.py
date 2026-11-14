@@ -67,6 +67,10 @@ def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2):
             cell_cost = cost_grid[nr, nc]
             if cell_cost == np.inf:
                 continue
+            # No corner cutting: a diagonal step is allowed only if both cells
+            # it squeezes past are passable, so the path never clips a blocked cell.
+            if dr and dc and (cost_grid[r + dr, c] == np.inf or cost_grid[r, c + dc] == np.inf):
+                continue
             tentative_g = g_current + cell_cost * step
             neighbor = (nr, nc)
             if tentative_g < g_score.get(neighbor, np.inf):

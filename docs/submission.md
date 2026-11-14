@@ -1,104 +1,98 @@
-# Space Apps 2026 — Submission Draft
+# Space Apps 2026 — Submission Draft (not submitted)
 
-Challenge: **Interplanetary Survival Guide: Martian Map**
-Team: TODO (team name, members)
-Repository: https://github.com/YusufOztoprak/mars-map-space-apps-2026
+- **Challenge:** Interplanetary Survival Guide: Martian Map
+- **Team name:** Manifesto
+- **Team members:** Yusuf Öztoprak, Yusuf Tunç, Eren YILMAZ, Emirsultan BOĞATEKİN, Abdullah Demirel
+- **Repository:** https://github.com/YusufOztoprak/mars-map-space-apps-2026
 
-> Draft for the Space Apps submission form, the README intro and the slides. Check the form's actual fields and character limits, then trim. Every number here was measured on our running system on 14 Nov 2026.
+## Project-page fields and rules (from the team-page screenshots)
 
----
+- **Project Summary** is required, has a **1,500-character** counter, and suggests 50–200 words.
+- **Project Name** is shown as “Project Manifesto”; the screenshot does not show a required marker or character limit.
+- **Project Demonstration** and **Project** are required public URLs. The demo must be a slide deck of at most 7 slides (including title and introduction) or a video of 30 seconds or less. Both links must work without a password, permission, or registration; use the complete URL.
+- **Project Details**, **Use of Super Intelligence (SI)**, and **NASA Data** are required. SI is multi-select; choose applicable tools, or “I did not use SI” if none. NASA Data uses repeatable Link Text / Link URL rows.
+- **Space Agency Partner & Other Data** has repeatable Link Text / Link URL rows; no required marker is visible in the screenshot.
+- **Project Submission Verification** asks the team to agree to the terms and confirm the work is original. Complete these only after reviewing the final submission.
+- No character limits were visible for Project Name, Project Details, or link fields. The team name shown on the page is **Manifesto**.
+- The [Project Submission Guide](https://www.spaceappschallenge.org/resources/project-submission-guide/) additionally covers submission requirements and the local-event deadline. Do not submit until the team has reviewed the final links and content.
 
-## Project name
+## Copy-ready field draft
+
+### Project Name
 
 **Jezero Safe Route — a layered Marswalk planner**
 
-## High-level summary (short version, ~100 words)
+### Summary (required; max 1,500 characters; suggested 50–200 words)
 
-Jezero Safe Route is a web map that helps plan a safe and scientifically rich walk across Jezero Crater on Mars. It layers data from two NASA missions: Mars Reconnaissance Orbiter imagery and elevation, and Perseverance rover waypoints and photos. Click two points and the app computes a walking route in real time from a 20 m elevation model. It avoids slopes steeper than 20° and estimates distance, walking time and the steepest slope on the way. A slope-hazard layer shows why the route bends, and science stops show what an explorer could study along the way.
+Jezero Safe Route is a web map for planning Marswalks across Jezero Crater. It combines 20 m/pixel CTX elevation data, HiRISE imagery, and Perseverance science sites. Choose a start and destination to calculate a route that avoids modeled slopes above 20° and reports distance, estimated walking time, and maximum slope. A global MOLA hillshade adds planetary context but does not affect routing.
 
-## Project details
+### Project Demonstration (required)
 
-### What it does
-- Shows Jezero Crater with 25 cm/pixel HiRISE imagery.
-- Lets the user pick a start and an end point; the backend returns a walking route as GeoJSON with distance, estimated walking time and maximum slope.
-- Marks five Perseverance science sites (for example Hogwallow Flats and Wildcat Ridge) with rover photos, credits and one-sentence science summaries.
-- Adds an optional slope-hazard layer: yellow 10–15°, orange 15–20°, red above 20°. The route never enters red cells.
+**TBD:** add the public slide-deck or ≤30-second video URL. Test it in a private browser window before submission.
 
-### How it works
-1. **Elevation:** USGS Mars 2020 Science Investigation CTX DEM mosaic, 20 m/pixel (about 89 × 101 km around Jezero). We read its map projection from the file itself (equirectangular, Mars 2000 sphere) and convert between latitude/longitude and DEM pixels.
-2. **Slope** for every cell from the elevation grid.
-3. **Walking cost:** Tobler's hiking function turns slope into walking speed, scaled to a 2.2 km/h EVA pace. Each cell's cost is the time needed to cross it.
-4. **Safety limit:** cells steeper than 20° or without data are impassable.
-5. **Search:** weighted A* over the grid. A 20 km route is computed in about 2 seconds. Route cost is guaranteed to be within 20% of the optimum; in our tests the difference was about 2%.
-6. **Map:** Leaflet.js in the Mars equirectangular frame (EPSG:4326-style grid), with NASA Mars Trek tiles.
+### Project (required)
 
-### How we tested it
-- Backend unit tests (pytest) for valid routes, malformed input (400), points outside the data (422) and JSON error handling.
-- End-to-end browser tests (headless Firefox): route drawing, reset, error messages, science-point popups, layer panel.
-- Consistency check: 13 random routes, 6,060 route points — none falls on a cell above the 20° limit, which confirms that the hazard layer and the routing engine are aligned.
+https://github.com/YusufOztoprak/mars-map-space-apps-2026
 
-### Benefits and impact
-- **For Mars exploration:** a quick way to compare walking routes between science targets before a Marswalk, using real orbital terrain data.
-- **On Earth:** the same method (elevation model → slope → walking cost → safest path) applies to search-and-rescue planning, mountain hiking and analog-astronaut field missions.
-- **Lake Salda, Türkiye:** NASA uses Lake Salda as an Earth analogue for Jezero because both have carbonate-bearing lake and delta deposits. Our team is from Türkiye, and this tool could plan field routes there too.
+### Project Details (required)
 
-### Limitations (stated openly)
-- A 20 m elevation model cannot see boulders or small scarps; real slopes can be steeper than the model shows. The route is a planning aid, not a safety certification.
-- The 20° limit is a conservative prototype parameter, not a NASA standard.
-- The 2.2 km/h EVA walking pace is an adapted assumption, not measured astronaut performance.
+Users select two locations on an interactive map of Jezero Crater. The Flask API reads the USGS 20 m/pixel CTX DEM, derives slope, excludes cells above the 20° prototype limit and no-data cells, then uses a Tobler-based walking cost and weighted A* to return a GeoJSON route with distance, estimated time, and maximum slope. The Leaflet map displays the route over NASA Mars Trek HiRISE imagery, with optional slope-hazard and global MOLA context layers. Five Perseverance waypoints open credited rover images and short science summaries.
 
-### Tools and technologies
-Python, Flask, NumPy, rasterio, Pillow, pytest · JavaScript, Leaflet.js · Playwright (browser tests) · Git/GitHub
+The route is a planning aid, not a safety certification. A 20 m DEM cannot resolve small rocks or scarps; 20° and 2.2 km/h are prototype assumptions. The roughly 463 m/pixel MOLA hillshade is visual context only. Requests over 30 km straight-line distance are rejected.
 
-### Future work
-- Whole-Mars coarse routes from the global MOLA elevation model, clearly labeled with a data-confidence level.
-- A user-adjustable slope limit in the interface.
-- Finer slopes from the 1 m HiRISE elevation model.
-- Multi-stop routes that visit several science sites in one walk.
-- Seasonal and time-of-day temperature estimates (clearly labeled as model estimates, not forecasts).
+### Use of Super Intelligence (SI) (required; select all that apply)
 
-## NASA data used
+Select the form option for **Code and data**; do not select “I did not use SI.” The tools assisted with implementation, debugging, tests, literature review, science-point data, summaries, attributions, and metadata checks. The team reviewed the outputs against NASA/USGS sources. No imagery was AI-generated. The form requires code/data assistance to be acknowledged in descriptive text and metadata; this use is also documented in [`ai_usage.md`](../ai_usage.md).
 
-| Data | Mission / instrument | Use | Credit |
-|---|---|---|---|
-| Jezero HiRISE orthomosaic, 25 cm/pixel (NASA Mars Trek WMTS) | MRO / HiRISE | Base map | NASA/JPL/University of Arizona |
-| Mars 2020 Science Investigation CTX DEM mosaic, 20 m/pixel | MRO / CTX (USGS Astrogeology, PDS) | Slope, routing, hazard layer | Fred Calef / USGS Astrogeology Science Center |
-| Perseverance waypoints (M20 waypoint GeoJSON) | Mars 2020 | Science-site locations | NASA/JPL-Caltech |
-| Perseverance raw images and Mastcam-Z panoramas | Mars 2020 / Mastcam-Z, Navcam | Science-site photos | NASA/JPL-Caltech/ASU (Brac: /MSSS) |
-| NASA Science articles on Jezero samples and Lake Salda | — | Science summaries, Earth analogue | NASA Science |
+### NASA Data (required; repeatable Link Text / Link URL rows)
 
-Full links and attribution: `data_sources.md` in the repository.
+- **Link Text:** NASA Mars Trek — Jezero HiRISE orthomosaic (~25 cm/pixel); **Link URL:** https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0/WMTSCapabilities.xml
+- **Link Text:** NASA Mars Trek — MGS MOLA Global Color Hillshade (~463 m/pixel); **Link URL:** https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars
+- **Link Text:** NASA/JPL — Perseverance M20 waypoint GeoJSON; **Link URL:** https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json
+- **Link Text:** NASA Perseverance Raw Images Gallery — Brac; **Link URL:** https://mars.nasa.gov/mars2020/multimedia/raw-images/ZL0_0262_0690210961_535EBY_N0080000ZCAM05068_1100LMJ
+- **Link Text:** NASA Perseverance Raw Images Gallery — Hogwallow Flats; **Link URL:** https://mars.nasa.gov/mars2020/multimedia/raw-images/ZR0_0461_0707862611_428EBY_N0260470ZCAM08482_1100LMJ
+- **Link Text:** NASA Perseverance Raw Images Gallery — Wildcat Ridge; **Link URL:** https://mars.nasa.gov/mars2020/multimedia/raw-images/NLF_0509_0712140650_691ECM_N0261222NCAM00709_09_095J
+- **Link Text:** NASA Perseverance Raw Images Gallery — Yori Pass; **Link URL:** https://mars.nasa.gov/mars2020/multimedia/raw-images/ZR0_0615_0721540472_488EBY_N0301172ZCAM08622_0340LMJ
+- **Link Text:** NASA Perseverance Raw Images Gallery — Three Forks Sample Depot; **Link URL:** https://mars.nasa.gov/mars2020/multimedia/raw-images/SIF_0684_0727663715_964EBY_N0321050SRLC07021_0000LMJ
+- **Link Text:** NASA Science — Mars rock samples; **Link URL:** https://science.nasa.gov/mission/mars-2020-perseverance/mars-rock-samples/
+- **Link Text:** NASA Science — Brac Mastcam-Z panorama; **Link URL:** https://science.nasa.gov/resource/mastcam-zs-view-of-the-area-around-brac-in-mars-jezero-crater/
+- **Link Text:** NASA Science — Hogwallow Flats Mastcam-Z views; **Link URL:** https://science.nasa.gov/resource/perseverances-mastcam-z-views-hogwallow-flats/
+- **Link Text:** NASA Science — Perseverance explores the Jezero delta; **Link URL:** https://science.nasa.gov/resource/perseverance-explores-the-jezero-crater-delta/
+- **Link Text:** NASA/JPL — Hazeltop and Bearwallow samples; **Link URL:** https://www.jpl.nasa.gov/videos/meet-the-mars-samples-hazeltop-and-bearwallow-samples-1213/
+- **Link Text:** NASA — Perseverance investigates Martian bedrock; **Link URL:** https://www.nasa.gov/missions/mars-2020-perseverance/perseverance-rover/nasas-perseverance-rover-investigates-intriguing-martian-bedrock/
+- **Link Text:** NASA Science — Yori Pass context; **Link URL:** https://science.nasa.gov/blog/a-picture-is-worth-a-thousand-words/
+- **Link Text:** NASA Science — Three Forks Sample Depot map; **Link URL:** https://science.nasa.gov/resource/perseverances-three-forks-sample-depot-map/
+- **Link Text:** NASA Science — Lake Salda and Mars; **Link URL:** https://science.nasa.gov/blogs/earth-matters/2021/02/17/what-a-lake-in-turkey-can-tell-us-about-mars/
 
-## Space agency partner data
-None used. (TODO: confirm before submitting.)
+Attributions: HiRISE — **NASA/JPL/University of Arizona · NASA Mars Trek**; MOLA — **NASA/JPL/GSFC · NASA Mars Trek**; Perseverance data/images — **NASA/JPL-Caltech**, with image-specific credits in `data/science_points.json`. MOLA is visual context only; route and slope calculations use the CTX DEM.
 
-## References
-- NASA Mars Trek: https://trek.nasa.gov/mars
-- USGS CTX DEM product record: https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic
-- Perseverance raw images: https://mars.nasa.gov/mars2020/multimedia/raw-images/
-- Tobler, W. (1993). Three presentations on geographical analysis and modeling (hiking function).
-- Leaflet.js (BSD-2-Clause): https://leafletjs.com
-- Full list: `data_sources.md`
+### Space Agency Partner & Other Data (repeatable Link Text / Link URL rows)
 
-## Use of AI
-We used Claude (Anthropic), Claude Code, Gemini and ChatGPT for research, coding help, testing and drafting documentation. Every AI-assisted output was reviewed, run and tested by a team member before merging, and factual claims were checked against NASA/USGS sources. No imagery was generated with AI. Details by area: `ai_usage.md`.
+- **Link Text:** USGS Mars 2020 Science Investigation CTX DEM Mosaic (20 m/pixel); **Link URL:** https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic
+- **Link Text:** Leaflet.js (BSD-2-Clause license); **Link URL:** https://github.com/Leaflet/Leaflet/blob/main/LICENSE
+- **Link Text:** Backend software dependencies (Flask, Flask-CORS, NumPy, Rasterio, Pillow); **Link URL:** https://github.com/YusufOztoprak/mars-map-space-apps-2026/blob/main/backend/requirements.txt
 
----
+No Space Agency Partner datasets were used. See [`data_sources.md`](../data_sources.md), [`ai_usage.md`](../ai_usage.md), and the repository for full source, software, and attribution details.
 
-## Slide outline (7 slides)
+## Lake Salda slide copy
 
-1. **Title + problem:** "Where can an astronaut walk safely — and what can they study on the way?" One HiRISE image of Jezero.
-2. **Our answer:** a layered map + live route computation. Most Mars maps are static layers; ours computes the route when you click.
-3. **Data layers:** MRO (HiRISE, CTX DEM) + Mars 2020 (waypoints, photos). Small icons, one line each.
-4. **How the route is computed:** DEM → slope → Tobler walking cost → 20° limit → weighted A*. Simple left-to-right diagram.
-5. **Demo:** screenshot with the hazard layer on — the route threading between red slopes at the delta front. Distance, time and max slope in the corner.
-6. **Validation and honest limits:** tests, 6,060-point consistency check, 2 s for 20 km; then the three limitations.
-7. **Impact + future:** Earth uses (search and rescue, analog missions), Lake Salda link, future work list.
+NASA identifies Türkiye’s Lake Salda as the only known lake on Earth with carbonate minerals and delta deposits similar to those at Jezero. Studying Salda’s microbialites and sedimentary processes helps researchers frame questions about Jezero’s ancient lake environment.
 
-## 30-second video script (if a video is required instead of slides)
+Source: [NASA Science — “What a Lake in Turkey Can Tell Us about Mars”](https://science.nasa.gov/blogs/earth-matters/2021/02/17/what-a-lake-in-turkey-can-tell-us-about-mars/).
 
-- 0–5 s: Jezero Crater map. Text: "Planning a safe Marswalk in Jezero Crater."
-- 5–15 s: click two points, the route appears with distance, time and max slope.
-- 15–22 s: turn on the hazard layer; the route avoids the red slopes at the delta front.
-- 22–28 s: open a science-site popup with a Perseverance photo.
-- 28–30 s: "Real NASA data. Live routes. Built at Space Apps 2026."
+## Slide outline (maximum 7 slides)
+
+1. Title, team, and challenge.
+2. Jezero problem and our live route planner.
+3. NASA data layers: HiRISE, CTX DEM, MOLA context, and Perseverance sites.
+4. Route method: elevation → slope → walking cost → A*.
+5. Demo: choose two points, view route, toggle slope hazards, open a science popup.
+6. Lake Salda analogue and Earth relevance.
+7. Validation status, limitations, and future Mars-wide work.
+
+## 30-second video alternative
+
+- **0–5 s:** Jezero map — “Plan a Marswalk through Jezero Crater.”
+- **5–15 s:** Select endpoints; show the generated route and metrics.
+- **15–23 s:** Toggle slope hazards, then open a Perseverance science popup.
+- **23–30 s:** “NASA data, live routing, and science along the way.”

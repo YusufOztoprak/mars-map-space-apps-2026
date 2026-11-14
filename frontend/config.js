@@ -56,7 +56,8 @@ const MAP_ZOOM = 12;
 // curl ile doğrulandı: z0..z17 var, z18 ve üstü 404 döner.
 const HIRISE = {
   url: "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0//default/default028mm/{z}/{y}/{x}.png",
-  attribution: "NASA/JPL-Caltech/USGS",
+  // Kredi: data_sources.md → HiRISE kullanım politikası (uahirise.org/media/usage.php)
+  attribution: "HiRISE: NASA/JPL/University of Arizona · NASA Mars Trek",
   maxNativeZoom: 17, // Sunucudaki en yüksek gerçek zoom seviyesi
   maxZoom: 19,       // 18-19'da Leaflet z17 tile'larını büyüterek gösterir
   // Kapsama alanı (WMTSCapabilities.xml'deki LowerCorner/UpperCorner).

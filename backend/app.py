@@ -23,6 +23,13 @@ STANDARD_PARALLEL_DEG = 18.4663
 CENTRAL_MERIDIAN_DEG = 0.0
 
 DEM_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "jezero_dem.tif")
+if not os.path.exists(DEM_PATH):
+    raise SystemExit(
+        "Elevation model not found: data/jezero_dem.tif\n"
+        "Download it first (about 90 MB), see README > Quick start:\n"
+        "  curl -L -o data/jezero_dem.tif "
+        "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif"
+    )
 elevation, transform, crs, nodata = load_dem(DEM_PATH)
 cellsize = transform.a  # 20.0 meters/pixel
 slope_deg = compute_slope(elevation, cellsize)
