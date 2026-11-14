@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mars Haritası — Jezero Güvenli Rota</title>
+
+  <!-- Leaflet 1.9.4, CDN'den sabit sürüm. "integrity" hash'i dosyanın
+       değiştirilmediğini tarayıcıya doğrulatır (hash'ler curl ile kontrol edildi). -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    /* Harita tüm pencereyi kaplasın */
+    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+    #map { height: 100%; background: #1b1b1b; }
+
+    /* Sol alttaki durum/bilgi kutusu */
+    .durum-kutusu {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 8px 12px; border-radius: 6px; max-width: 320px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); font-size: 14px; line-height: 1.4;
+    }
+    .durum-kutusu.hata { background: #fde2e2; color: #8a1010; }
+    .durum-kutusu.yukleniyor { background: #fff6d6; }
+
+    /* Bilim noktası popup'ı */
+    .bilim-popup h3 { margin: 0 0 6px; font-size: 15px; }
+    /* Resim kutusu sabit 4:3: popup açılırken boyutu belli olsun (kaydırma doğru çalışsın).
+       scale-down: küçük resimler (ör. 128 px) büyütülüp bulanıklaşmaz, büyükler sığdırılır. */
+    .bilim-popup img { width: 100%; aspect-ratio: 4 / 3; object-fit: scale-down;
+                       background: #222; border-radius: 4px; display: block; }
+    .bilim-popup p { margin: 6px 0; }
+    .bilim-popup .kucuk { font-size: 11px; color: #555; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Sıra önemli: önce ayarlar, sonra uygulama -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
