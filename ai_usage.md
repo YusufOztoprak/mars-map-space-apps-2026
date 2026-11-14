@@ -11,8 +11,7 @@ We used AI tools to speed up research, coding and testing. Every AI-assisted out
 | Claude (Anthropic) — chat assistant | Planning, backend code, debugging, test design, documentation drafts |
 | Claude Code (Anthropic) | Frontend code and browser testing |
 | Gemini (Google) | Literature review before the hackathon |
-| ChatGPT (OpenAI) | Early hackathon planning before the challenge was chosen |
-| TODO: Data/Content tool | TODO |
+| ChatGPT (OpenAI) | Early challenge planning; GeoJSON structuring, English science summaries, attribution drafting, and image/DEM metadata checks |
 | TODO: Integration/Test tool | TODO |
 
 ## Where AI was used
@@ -33,8 +32,8 @@ Code was drafted with Claude in a chat session, then reviewed, run, tested and i
 
 The presentation screenshots are captures of our running app, not AI-generated images.
 
-### Data and content (`data/`, `data_sources.md`) — TODO: name
-TODO: which tool, and for what (finding Perseverance waypoints and images, writing science summaries, checking attributions).
+### Data and content (`data/`, `data_sources.md`) — Eren YILMAZ and Emirsultan BOĞATEKİN
+The team compiled five complete Perseverance waypoints into `data/science_points.json`, preserving approximate-coordinate notes, image links and credits, and concise English science summaries. The Brac preview uses a compact 1200-pixel derivative of the NASA Mastcam-Z natural-color panorama; the USGS 20 m/pixel CTX DEM was downloaded outside the repository for backend handoff. `data_sources.md` records NASA/USGS sources and resolution limits, Leaflet BSD-2 and HiRISE credits, the Lake Salda analogy, and the decision to defer global MOLA coverage. ChatGPT helped structure the GeoJSON, draft summaries and attribution, and check Brac image details and CTX metadata; NASA/USGS mission data and imagery were not AI-generated.
 
 ### Integration and testing (`tests/`, `docs/`) — TODO: name
 TODO: which tool, and for what (test design, contract checks, reports).
