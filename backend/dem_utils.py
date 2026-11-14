@@ -9,14 +9,15 @@ except ImportError:
 
 
 def load_dem(path):
-    """Load a real DEM GeoTIFF. Returns (elevation_array, transform, crs)."""
+    """Load a real DEM GeoTIFF. Returns (elevation_array, transform, crs, nodata)."""
     if not HAS_RASTERIO:
         raise RuntimeError("rasterio not installed - run: pip install rasterio")
     with rasterio.open(path) as src:
         elevation = src.read(1).astype(np.float64)
         transform = src.transform
         crs = src.crs
-    return elevation, transform, crs
+        nodata = src.nodata
+    return elevation, transform, crs, nodata
 
 
 def generate_synthetic_dem(width=200, height=200, cellsize=25.0, seed=42):

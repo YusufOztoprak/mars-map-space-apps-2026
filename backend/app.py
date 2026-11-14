@@ -1,44 +1,64 @@
 """Flask API: POST /route -> GeoJSON LineString."""
+import math
+
+import numpy as np
 from flask import Flask, request, jsonify
 from flask_cors import CORS
-import numpy as np
-
-from dem_utils import generate_synthetic_dem, compute_slope
-from routing import build_cost_grid, astar
+from rasterio.transform import rowcol, xy as transform_xy
 from werkzeug.exceptions import HTTPException
+
+from dem_utils import load_dem, compute_slope
+from routing import build_cost_grid, astar
 
 app = Flask(__name__)
 CORS(app)
 
-# TODO: once Veri/Icerik delivers the real DEM, swap this block for:
-#   from dem_utils import load_dem
-#   elevation, transform, crs = load_dem("../data/jezero_dem.tif")
-#   cellsize = transform.a
-elevation, cellsize = generate_synthetic_dem(width=200, height=200)
+# Real Jezero CTX DEM (20 m/pixel), USGS Mars 2020 Science Investigation CTX
+# DEM Mosaic. Projection: equirectangular, Mars 2000 sphere (R=3396190 m),
+# standard_parallel_1=18.4663 deg, central_meridian=0 deg (read from the
+# GeoTIFF's own CRS via inspect_dem.py).
+MARS_RADIUS_M = 3396190.0
+STANDARD_PARALLEL_DEG = 18.4663
+CENTRAL_MERIDIAN_DEG = 0.0
+
+elevation, transform, crs, nodata = load_dem("../data/jezero_dem.tif")
+cellsize = transform.a  # 20.0 meters/pixel
 slope_deg = compute_slope(elevation, cellsize)
 cost_grid = build_cost_grid(slope_deg, cellsize)
+if nodata is not None:
+    cost_grid[elevation == nodata] = np.inf
 GRID_HEIGHT, GRID_WIDTH = elevation.shape
 
-# Placeholder DEM bounding box (Jezero HiRISE footprint) until the real
-# GeoTIFF transform replaces this linear mapping.
-LON_MIN, LON_MAX = 77.2229331, 77.583964
-LAT_MIN, LAT_MAX = 18.3067994, 18.669315
+
+def lonlat_to_xy(lon, lat):
+    """Project geographic lon/lat (degrees) to the DEM's equirectangular x/y (meters)."""
+    cos_std = math.cos(math.radians(STANDARD_PARALLEL_DEG))
+    x = MARS_RADIUS_M * math.radians(lon - CENTRAL_MERIDIAN_DEG) * cos_std
+    y = MARS_RADIUS_M * math.radians(lat)
+    return x, y
 
 
-def pixel_to_lonlat(row, col):
-    lon = LON_MIN + (col / GRID_WIDTH) * (LON_MAX - LON_MIN)
-    lat = LAT_MIN + (row / GRID_HEIGHT) * (LAT_MAX - LAT_MIN)
+def xy_to_lonlat(x, y):
+    """Inverse of lonlat_to_xy."""
+    cos_std = math.cos(math.radians(STANDARD_PARALLEL_DEG))
+    lon = CENTRAL_MERIDIAN_DEG + math.degrees(x / (MARS_RADIUS_M * cos_std))
+    lat = math.degrees(y / MARS_RADIUS_M)
     return lon, lat
 
 
+def pixel_to_lonlat(row, col):
+    x, y = transform_xy(transform, row, col)
+    return xy_to_lonlat(x, y)
+
+
 def lonlat_to_pixel(lat, lon):
-    """Returns (row, col) or None if the point falls outside the DEM coverage."""
-    if not (LON_MIN <= lon <= LON_MAX and LAT_MIN <= lat <= LAT_MAX):
+    """Returns (row, col), or None if outside the DEM grid or on a nodata cell."""
+    x, y = lonlat_to_xy(lon, lat)
+    row, col = rowcol(transform, x, y)
+    if not (0 <= row < GRID_HEIGHT and 0 <= col < GRID_WIDTH):
         return None
-    col = int((lon - LON_MIN) / (LON_MAX - LON_MIN) * GRID_WIDTH)
-    row = int((lat - LAT_MIN) / (LAT_MAX - LAT_MIN) * GRID_HEIGHT)
-    col = min(max(col, 0), GRID_WIDTH - 1)
-    row = min(max(row, 0), GRID_HEIGHT - 1)
+    if nodata is not None and elevation[row, col] == nodata:
+        return None
     return row, col
 
 
@@ -103,6 +123,12 @@ def route():
     }
     return jsonify(geojson)
 
+
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "grid": [GRID_HEIGHT, GRID_WIDTH]})
+
+
 @app.errorhandler(HTTPException)
 def handle_http_exception(e):
     return jsonify({"error": e.description}), e.code
@@ -112,10 +138,6 @@ def handle_http_exception(e):
 def handle_unexpected_error(e):
     app.logger.exception("Unexpected error")
     return jsonify({"error": "sunucu hatası, lütfen tekrar deneyin"}), 500
-
-@app.route("/health", methods=["GET"])
-def health():
-    return jsonify({"status": "ok", "grid": [GRID_HEIGHT, GRID_WIDTH]})
 
 
 if __name__ == "__main__":
