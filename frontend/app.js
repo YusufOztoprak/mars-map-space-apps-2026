@@ -11,14 +11,28 @@
 // @media (max-width: 600px) ile aynı sınır.)
 const DAR_EKRAN = window.matchMedia("(max-width: 600px)").matches;
 
+// Leaflet'in EPSG4326'sı mesafeyi DÜNYA yarıçapıyla (6371 km) ölçer; ölçek
+// çubuğu bu yüzden Mars'ta ~1,88 kat yanlış çıkardı. Tile ızgarası aynı
+// kalsın, sadece yarıçap Mars olsun (backend'deki Mars 2000 küresiyle aynı: 3396190 m).
+const MARS_CRS = L.extend({}, L.CRS.EPSG4326, { R: 3396190 });
+
 const map = L.map("map", {
-  crs: L.CRS.EPSG4326,
+  crs: MARS_CRS,
   center: MAP_CENTER,
   zoom: MAP_ZOOM,
   maxZoom: HIRISE.maxZoom,
 });
 
 // ---------- 2) Katmanlar ----------
+// MOLA altlığı (tüm Mars): HiRISE kutusunun dışı siyah kalmasın diye.
+// zIndex 0 → panelden kapatıp açınca bile her zaman HiRISE'ın (zIndex 1) altında kalır.
+const molaKatmani = L.tileLayer(MOLA.url, {
+  attribution: MOLA.attribution,
+  maxNativeZoom: MOLA.maxNativeZoom,
+  maxZoom: HIRISE.maxZoom,
+  zIndex: 0,
+}).addTo(map);
+
 // HiRISE görüntü katmanı. "bounds" sayesinde kapsama dışı için istek atılmaz.
 const hiriseLayer = L.tileLayer(HIRISE.url, {
   attribution: HIRISE.attribution,
@@ -27,8 +41,8 @@ const hiriseLayer = L.tileLayer(HIRISE.url, {
   bounds: HIRISE.bounds,
 }).addTo(map);
 
-// HiRISE'ın kapsadığı alanı kesikli çizgiyle gösteren kutu. Kullanıcı bu
-// kutunun dışının neden siyah olduğunu anlasın diye. interactive:false →
+// HiRISE'ın kapsadığı alanı kesikli çizgiyle gösteren kutu. Kullanıcı
+// yüksek çözünürlüklü görüntünün nerede bittiğini görsün diye. interactive:false →
 // tıklamaları engellemez, tıklama haritaya geçer.
 const kapsamaKutusu = L.rectangle(HIRISE.bounds, {
   color: "#ffcc00", weight: 1, dashArray: "6 4", fill: false, interactive: false,
@@ -41,6 +55,7 @@ const bilimKatmani = L.layerGroup().addTo(map);
 // Katman aç/kapa kontrolü (sağ üst). Değişkende tutuyoruz ki sonradan
 // yüklenen katmanlar (eğim haritası) addOverlay ile eklenebilsin.
 const katmanKontrol = L.control.layers(null, {
+  "MOLA renkli yükseklik (tüm Mars, 463 m)": molaKatmani,
   "HiRISE Jezero (25 cm)": hiriseLayer,
   "HiRISE kapsama sınırı": kapsamaKutusu,
   "Bilim noktaları (Perseverance)": bilimKatmani,
