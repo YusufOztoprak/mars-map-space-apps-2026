@@ -36,8 +36,8 @@ The presentation screenshots are captures of our running app, not AI-generated i
 ### Data and content (`data/`, `data_sources.md`) — TODO: name
 TODO: which tool, and for what (finding Perseverance waypoints and images, writing science summaries, checking attributions).
 
-### Integration and testing (`tests/`, `docs/`) — Abdullah
-OpenAI Codex assisted Abdullah with repository analysis, pytest infrastructure, GeoJSON and coordinate validation, Flask test-client checks against pinned backend revisions, and Node-based frontend flow tests. The tests covered request formatting, error responses, CORS, same-cell routes, invalid geometry and metrics, and synthetic-grid pathfinding; findings and retest results were recorded in integration notes, test reports and end-to-end checklists. Tests were run locally, with failures and skipped checks reported explicitly; backend tests used clearly labelled synthetic DEM fixtures (including a patched DEM loader), and frontend flow tests used Leaflet and HTTP test doubles, so this work did not establish real-DEM or browser-rendering correctness.
+### Integration and testing (`tests/`, `docs/`) — Abdullah Demirel
+OpenAI Codex assisted Abdullah Demirel with repository analysis, pytest infrastructure, GeoJSON and coordinate validation, Flask test-client checks against pinned backend revisions, and Node-based frontend flow tests. The tests covered request formatting, error responses, CORS, same-cell routes, invalid geometry and metrics, and synthetic-grid pathfinding; findings and retest results were recorded in integration notes, test reports and end-to-end checklists. Tests were run locally, with failures and skipped checks reported explicitly; backend tests used clearly labelled synthetic DEM fixtures (including a patched DEM loader), and frontend flow tests used Leaflet and HTTP test doubles, so this work did not establish real-DEM or browser-rendering correctness.
 
 ### Documentation and presentation — TODO: name
 TODO: which tool, and for what (README, slides, video script).
