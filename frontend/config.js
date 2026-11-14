@@ -54,3 +54,22 @@ const HIRISE = {
     [18.669315, 77.583964],   // kuzeydoğu köşe
   ],
 };
+
+// Eğim tehlike haritası: backend/make_slope_overlay.py, rotanın kullandığı AYNI
+// eğim verisinden (CTX DEM, 20 m) bu iki dosyayı frontend/ içine üretir:
+//   slope_overlay.png  → renkli yarı saydam resim (saydamlık resmin içinde)
+//   slope_overlay.json → resmin enlem/boylam sınırları + eğim sınırı
+// Yollar sayfaya (frontend/index.html) göredir. DEM eşdikdörtgen olduğu için
+// L.imageOverlay resmi doğru yere oturtur.
+const SLOPE_OVERLAY = {
+  metaUrl: "slope_overlay.json",
+  url: "slope_overlay.png",
+  showOnStart: false, // varsayılan kapalı; demoda panelden açılır
+  // Lejant renkleri make_slope_overlay.py'deki renklerle aynı.
+  // Sınır derecesi ({sinir}) slope_overlay.json'daki slope_limit_deg'den gelir.
+  siniflar: [
+    { renk: "#facc15", metin: "10–15°  orta eğim" },
+    { renk: "#f97316", metin: "15–{sinir}°  dik" },
+    { renk: "#dc2626", metin: "> {sinir}°  geçilmez (rota asla girmez)" },
+  ],
+};

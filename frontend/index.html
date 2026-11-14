@@ -26,6 +26,13 @@
     .durum-kutusu.hata { background: #fde2e2; color: #8a1010; }
     .durum-kutusu.yukleniyor { background: #fff6d6; }
 
+    /* Eğim katmanı: 20 m'lik hücreler yumuşatılmadan görünsün */
+    .egim-katmani { image-rendering: pixelated; }
+    /* Eğim lejantı (sağ alt) */
+    .egim-lejant .baslik { font-weight: 600; margin-bottom: 4px; }
+    .egim-lejant .kare { display: inline-block; width: 14px; height: 14px; margin-right: 6px;
+                         vertical-align: -2px; border: 1px solid rgba(0,0,0,.3); }
+
     /* Rota özeti: başlık + etiket/değer satırları */
     .rota-ozeti { min-width: 230px; }
     .rota-ozeti .baslik { font-weight: 600; margin-bottom: 4px; border-left: 4px solid #00b8d4; padding-left: 6px; }

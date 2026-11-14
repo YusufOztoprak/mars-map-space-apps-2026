@@ -34,14 +34,60 @@ const kapsamaKutusu = L.rectangle(HIRISE.bounds, {
 // (bkz. bölüm 7). Boş da olsa katman listesinde görünür.
 const bilimKatmani = L.layerGroup().addTo(map);
 
-// Katman aç/kapa kontrolü (sağ üst).
-L.control.layers(null, {
+// Katman aç/kapa kontrolü (sağ üst). Değişkende tutuyoruz ki sonradan
+// yüklenen katmanlar (eğim haritası) addOverlay ile eklenebilsin.
+const katmanKontrol = L.control.layers(null, {
   "HiRISE Jezero (25 cm)": hiriseLayer,
   "HiRISE kapsama sınırı": kapsamaKutusu,
   "Bilim noktaları (Perseverance)": bilimKatmani,
 }, { collapsed: false }).addTo(map);
 
 L.control.scale({ imperial: false }).addTo(map);
+
+// ---------- 2b) Eğim tehlike haritası ----------
+// Önce JSON'dan sınırları okur, sonra PNG'yi o sınırlara gerer.
+// Dosyalar yoksa harita normal çalışır, panelde bu katman görünmez.
+let egimKatmani = null;
+
+// Lejant (sağ alt): sadece eğim katmanı açıkken görünür.
+const EgimLejanti = L.Control.extend({
+  onAdd: function () {
+    const d = L.DomUtil.create("div", "durum-kutusu egim-lejant");
+    const baslik = document.createElement("div");
+    baslik.className = "baslik"; baslik.textContent = "Eğim (rotanın kullandığı veri)";
+    d.append(baslik);
+    SLOPE_OVERLAY.siniflar.forEach((s) => {
+      const satir = document.createElement("div");
+      const kare = document.createElement("span");
+      kare.className = "kare"; kare.style.background = s.renk;
+      satir.append(kare, document.createTextNode(s.metin.replaceAll("{sinir}", this.options.sinir)));
+      d.append(satir);
+    });
+    return d;
+  },
+});
+let egimLejanti = null;
+map.on("overlayadd", (e) => { if (e.layer === egimKatmani && egimLejanti) egimLejanti.addTo(map); });
+map.on("overlayremove", (e) => { if (e.layer === egimKatmani && egimLejanti) egimLejanti.remove(); });
+
+fetch(SLOPE_OVERLAY.metaUrl)
+  .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+  .then((meta) => {
+    const sinir = meta.slope_limit_deg;
+    if (sinir !== SLOPE_THRESHOLD_DEG) {
+      console.warn(`Eğim sınırı uyuşmuyor: overlay ${sinir}°, config.js ${SLOPE_THRESHOLD_DEG}°`);
+    }
+    // interactive:false → üstüne tıklamak haritaya tıklama sayılır (rota seçimi bozulmaz).
+    // className → CSS'te "pixelated": 20 m'lik hücreler bulanıklaşmadan görünür.
+    egimKatmani = L.imageOverlay(SLOPE_OVERLAY.url, meta.bounds, {
+      interactive: false, className: "egim-katmani",
+    });
+    egimKatmani.on("error", () => console.warn("Eğim resmi yüklenemedi:", SLOPE_OVERLAY.url));
+    egimLejanti = new EgimLejanti({ position: "bottomright", sinir });
+    katmanKontrol.addOverlay(egimKatmani, "Eğim tehlikesi (CTX DEM, 20 m)");
+    if (SLOPE_OVERLAY.showOnStart) map.addLayer(egimKatmani); // overlayadd → lejant da açılır
+  })
+  .catch((hata) => console.warn("Eğim katmanı bulunamadı (" + SLOPE_OVERLAY.metaUrl + "):", hata.message));
 
 // ---------- 3) Durum kutusu (sol alt) ----------
 // Kullanıcıya talimat, "hesaplanıyor" ve hata mesajlarını gösterir.
