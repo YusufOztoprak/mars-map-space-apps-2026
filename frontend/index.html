@@ -17,14 +17,25 @@
     html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
     #map { height: 100%; background: #1b1b1b; }
 
-    /* Sol alttaki durum/bilgi kutusu */
+    /* Sol alttaki durum/bilgi kutusu. 15 px: projektörde uzaktan okunsun. */
     .durum-kutusu {
-      background: rgba(255, 255, 255, 0.95);
+      background: rgba(255, 255, 255, 0.96);
       padding: 8px 12px; border-radius: 6px; max-width: 320px;
-      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); font-size: 14px; line-height: 1.4;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); font-size: 15px; line-height: 1.4;
     }
-    .durum-kutusu.hata { background: #fde2e2; color: #8a1010; }
-    .durum-kutusu.yukleniyor { background: #fff6d6; }
+    .durum-kutusu.hata { background: #fde2e2; color: #8a1010; font-weight: 600; }
+    .durum-kutusu.yukleniyor { background: #fff3c4; font-weight: 600; }
+    /* "Hesaplanıyor" sırasında dönen küçük halka (resim/kütüphane gerektirmez) */
+    .durum-kutusu.yukleniyor::before {
+      content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 8px;
+      vertical-align: -2px; border: 3px solid #b38f00; border-top-color: transparent;
+      border-radius: 50%; animation: don 0.8s linear infinite;
+    }
+    @keyframes don { to { transform: rotate(360deg); } }
+    /* Hesaplanırken fare imleci de "bekleniyor" olsun */
+    .leaflet-container.rota-hesaplaniyor { cursor: progress; }
+    /* Katman paneli yazısı biraz daha büyük */
+    .leaflet-control-layers { font-size: 14px; }
 
     /* Eğim katmanı: 20 m'lik hücreler yumuşatılmadan görünsün */
     .egim-katmani { image-rendering: pixelated; }
@@ -39,8 +50,19 @@
     .rota-ozeti .metrik { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; }
     .rota-ozeti .etiket { color: #555; min-width: 88px; }
     .rota-ozeti .metrik b { font-size: 16px; white-space: nowrap; }
-    .rota-ozeti .not { color: #888; font-size: 11px; }
-    .rota-ozeti .ipucu { color: #777; font-size: 12px; margin-top: 4px; }
+    /* Notlar #888 yerine #666: beyaz zeminde projektörde de okunur kontrast */
+    .rota-ozeti .not { color: #666; font-size: 12px; }
+    .rota-ozeti .ipucu { color: #555; font-size: 13px; margin-top: 4px; }
+
+    /* Dar ekran (telefon): kutular üst üste binmesin, harita görünür kalsın */
+    @media (max-width: 600px) {
+      .durum-kutusu { font-size: 14px; max-width: calc(100vw - 40px); }
+      .rota-ozeti { min-width: 0; }
+      .rota-ozeti .not { display: none; }          /* yer kazanmak için ek notlar gizli */
+      .egim-lejant { font-size: 12px; padding: 6px 8px; }
+      .egim-lejant .baslik { display: none; }
+      .egim-lejant .kare { width: 12px; height: 12px; }
+    }
 
     /* Bilim noktası popup'ı */
     .bilim-popup h3 { margin: 0 0 6px; font-size: 15px; }

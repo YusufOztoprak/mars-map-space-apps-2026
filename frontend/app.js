@@ -7,6 +7,10 @@
 // Mars verisi Web Mercator DEĞİL, eşdikdörtgen (enlem/boylam) ızgarada.
 // L.CRS.EPSG4326'nın tile ızgarası (zoom 0 = 2x1 tile, sol üst -180,90)
 // NASA'nın default028mm ızgarasıyla birebir aynı; bu yüzden tms/{-y} gerekmez.
+// Telefon gibi dar ekran mı? (Sayfa açılırken bir kez bakılır; CSS'teki
+// @media (max-width: 600px) ile aynı sınır.)
+const DAR_EKRAN = window.matchMedia("(max-width: 600px)").matches;
+
 const map = L.map("map", {
   crs: L.CRS.EPSG4326,
   center: MAP_CENTER,
@@ -40,7 +44,7 @@ const katmanKontrol = L.control.layers(null, {
   "HiRISE Jezero (25 cm)": hiriseLayer,
   "HiRISE kapsama sınırı": kapsamaKutusu,
   "Bilim noktaları (Perseverance)": bilimKatmani,
-}, { collapsed: false }).addTo(map);
+}, { collapsed: DAR_EKRAN }).addTo(map); // telefonda katman paneli simgeye küçülür
 
 L.control.scale({ imperial: false }).addTo(map);
 
@@ -83,7 +87,8 @@ fetch(SLOPE_OVERLAY.metaUrl)
       interactive: false, className: "egim-katmani",
     });
     egimKatmani.on("error", () => console.warn("Eğim resmi yüklenemedi:", SLOPE_OVERLAY.url));
-    egimLejanti = new EgimLejanti({ position: "bottomright", sinir });
+    // Telefonda alt köşeler rota özetine yetmiyor; lejant sol üste (zoom düğmelerinin altına) gider.
+    egimLejanti = new EgimLejanti({ position: DAR_EKRAN ? "topleft" : "bottomright", sinir });
     katmanKontrol.addOverlay(egimKatmani, "Eğim tehlikesi (CTX DEM, 20 m)");
     if (SLOPE_OVERLAY.showOnStart) map.addLayer(egimKatmani); // overlayadd → lejant da açılır
   })
@@ -106,6 +111,8 @@ const durum = new DurumKontrol({ position: "bottomleft" }).addTo(map);
 function durumGoster(metin, tur = "") {
   durum._div.className = "durum-kutusu" + (tur ? " " + tur : "");
   durum._div.textContent = metin;
+  // Hesaplanırken imleç "bekleniyor" olur (CSS: .rota-hesaplaniyor)
+  map.getContainer().classList.toggle("rota-hesaplaniyor", tur === "yukleniyor");
 }
 
 // ---------- 4) Tıklama durumu ----------
@@ -210,9 +217,13 @@ function rotaGeometrisiAl(veri) {
 // L.geoJSON, GeoJSON'un [boylam, enlem] sırasını Leaflet'in [enlem, boylam]
 // sırasına kendisi çevirir. Sadece doğrulanmış geometri buraya gelir.
 function rotaCiz(geometri, ozellikler) {
-  rotaKatmani = L.geoJSON(geometri, {
-    style: { color: "#00e5ff", weight: 4, opacity: 0.9 },
-  }).addTo(map);
+  // İki katmanlı çizgi: altta koyu, kalın bir "kenar", üstte camgöbeği çizgi.
+  // Böylece rota sarı/turuncu eğim katmanının ve açık renkli arazinin
+  // üstünde de (projektörde bile) net seçilir.
+  rotaKatmani = L.featureGroup([
+    L.geoJSON(geometri, { style: { color: "#002b36", weight: 8, opacity: 0.7 } }),
+    L.geoJSON(geometri, { style: { color: "#00e5ff", weight: 4.5, opacity: 1 } }),
+  ]).addTo(map);
 
   const m = rotaMetrikleri(ozellikler);
   rotaKatmani.bindPopup(`Mesafe: ${m.mesafe} · Süre: ${m.sure} · Maks. eğim: ${m.egim}`);
