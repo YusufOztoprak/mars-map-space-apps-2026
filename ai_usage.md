@@ -38,9 +38,8 @@ The team compiled five complete Perseverance waypoints into `data/science_points
 ### Integration and testing (`tests/`, `docs/`) — Abdullah Demirel
 OpenAI Codex assisted Abdullah Demirel with repository analysis, pytest infrastructure, GeoJSON and coordinate validation, Flask test-client checks against pinned backend revisions, and Node-based frontend flow tests. The tests covered request formatting, error responses, CORS, same-cell routes, invalid geometry and metrics, and synthetic-grid pathfinding; findings and retest results were recorded in integration notes, test reports and end-to-end checklists. Tests were run locally, with failures and skipped checks reported explicitly; backend tests used clearly labelled synthetic DEM fixtures (including a patched DEM loader), and frontend flow tests used Leaflet and HTTP test doubles, so this work did not establish real-DEM or browser-rendering correctness.
 
-### Documentation and presentation — TODO: name
-TODO: which tool, and for what (README, slides, video script).
-
+### Documentation and presentation — Yusuf Öztoprak and Yusuf Tunç
+The README, the integration guide (`docs/integration.md`), the submission text (`docs/submission.md`) and the demo script were drafted with Claude and then edited and fact-checked by the team. All numbers in them (route times, distances, test results) were measured on our running system. Presentation screenshots are captures of the running app, not AI-generated images. Slides: TODO — which tool, and whether AI was used.
 ## What was not AI-generated
 - All map imagery, elevation data and rover photos are NASA/USGS data products, credited in `data_sources.md`. We did not generate or alter any imagery with AI.
 - Science-point coordinates come from NASA's Perseverance waypoint data, not from AI output.
