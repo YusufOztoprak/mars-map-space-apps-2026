@@ -1,2 +1,2 @@
-# Sahte backend, sadece yerel test için; commit edilmez
+# Mock backend for local testing only; not committed
 mock_server.py
