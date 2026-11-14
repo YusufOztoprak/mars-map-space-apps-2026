@@ -1,5 +1,6 @@
 """Flask API: POST /route -> GeoJSON LineString."""
 import math
+import os
 
 import numpy as np
 from flask import Flask, request, jsonify
@@ -11,7 +12,7 @@ from dem_utils import load_dem, compute_slope
 from routing import build_cost_grid, astar
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=["http://localhost:8000", "http://127.0.0.1:8000"])
 
 # Real Jezero CTX DEM (20 m/pixel), USGS Mars 2020 Science Investigation CTX
 # DEM Mosaic. Projection: equirectangular, Mars 2000 sphere (R=3396190 m),
@@ -21,13 +22,15 @@ MARS_RADIUS_M = 3396190.0
 STANDARD_PARALLEL_DEG = 18.4663
 CENTRAL_MERIDIAN_DEG = 0.0
 
-elevation, transform, crs, nodata = load_dem("../data/jezero_dem.tif")
+DEM_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "jezero_dem.tif")
+elevation, transform, crs, nodata = load_dem(DEM_PATH)
 cellsize = transform.a  # 20.0 meters/pixel
 slope_deg = compute_slope(elevation, cellsize)
 cost_grid = build_cost_grid(slope_deg, cellsize)
 if nodata is not None:
     cost_grid[elevation == nodata] = np.inf
 GRID_HEIGHT, GRID_WIDTH = elevation.shape
+H_SCALE = float(np.min(cost_grid[np.isfinite(cost_grid)]))
 
 
 def lonlat_to_xy(lon, lat):
@@ -77,11 +80,17 @@ def path_stats(path):
     return round(distance_m / 1000, 3), round(time_s / 3600, 3), round(max_slope, 1)
 
 
+def _as_number(value):
+    """Accept only finite JSON numbers (rejects strings, booleans, NaN, inf)."""
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError("coordinate must be a finite JSON number")
+    return float(value)
+
+
 def parse_point(obj):
     """Extract (lat, lon) floats from a {'lat':..,'lon':..} or {'lat':..,'lng':..} dict."""
-    lat = float(obj["lat"])
-    lon_value = obj.get("lon", obj.get("lng"))
-    lon = float(lon_value)
+    lat = _as_number(obj["lat"])
+    lon = _as_number(obj.get("lon", obj.get("lng")))
     return lat, lon
 
 
@@ -102,7 +111,7 @@ def route():
     if start_rc is None or end_rc is None:
         return jsonify({"error": "koordinat DEM kapsama alanının dışında"}), 422
 
-    path = astar(cost_grid, start_rc, end_rc)
+    path = astar(cost_grid, start_rc, end_rc, h_scale=H_SCALE)
     if path is None:
         return jsonify({"error": "güvenli rota bulunamadı (çok dik arazi)"}), 422
 
