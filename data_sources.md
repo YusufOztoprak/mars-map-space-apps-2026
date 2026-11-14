@@ -19,12 +19,13 @@ Preserve each feature's `image_credit` and `image_caption` when showing an image
 
 - **NASA Mars Trek WMTS — Jezero HiRISE orthomosaic:** [Layer capabilities](https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0/WMTSCapabilities.xml). The layer is about 25 cm/pixel and is for visual context; it is not an elevation raster. Tile template: `https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0//default/default028mm/{z}/{y}/{x}.png`.
 - **USGS Mars 2020 Science Investigation CTX DEM Mosaic:** [Product record and metadata](https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic); [direct GeoTIFF](https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif). Resolution is 20 m/pixel; file size is about 87 MB. The DEM is tied vertically to MOLA. The product uses a Mars equirectangular projection, planetocentric latitude, and positive-east longitude. Credit Fred Calef / USGS Astrogeology Science Center; data originator: Planetary Data System. The product is public domain; cite the product authors.
+- **NASA Mars Trek WMTS — MGS MOLA, Global Color Hillshade:** [Mars Trek layer catalog](https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars), layer ID `Mars_MGS_MOLA_ClrShade_merge_global_463m` (~463 m/pixel, global coverage). Display attribution: **MOLA: NASA/JPL/GSFC · NASA Mars Trek**. NASA identifies the MOLA instrument as part of Mars Global Surveyor and uses the credit NASA/JPL/GSFC for its MOLA topographic imagery: [NASA/JPL MOLA reference](https://www.jpl.nasa.gov/images/pia01049-regional-topographic-views-of-mars-from-mola/).
 
 The CTX DEM supports crater-scale relative route analysis. It cannot resolve foot-scale rocks or certify that a route is safe. Do not describe the HiRISE image tiles as the terrain input for slope calculations.
 
-### Global MOLA scope decision
+### Global MOLA layer and route scope
 
-A global MOLA DEM is not required for the Jezero MVP and is not used by the current route calculation. The local route uses the 20 m CTX DEM. Whole-Mars coverage remains future scope; any MOLA layer added later must be labeled as coarse regional context with its resolution and coverage limits.
+The app's optional global MOLA hillshade is coarse visual context only; the route and slope calculation use the local 20 m CTX DEM. Do not use the 463 m/pixel hillshade as a navigation DEM or imply that it affects route safety. Whole-Mars route calculation remains future scope.
 
 ## Software and imagery credits
 
