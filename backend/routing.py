@@ -1,8 +1,9 @@
 """Tobler's Hiking Function cost model + A* pathfinding on a slope-weighted grid."""
 import heapq
 import numpy as np
+import math
 
-SAFETY_THRESHOLD_DEG = 28.0  # slopes steeper than this are impassable for an EVA astronaut
+SAFETY_THRESHOLD_DEG = 20.0  # slopes steeper than this are impassable for an EVA astronaut
 BASE_SPEED_KMH = 2.2         # estimated EVA walking speed (honesty note: not an official NASA constant)
 
 
@@ -24,22 +25,33 @@ def build_cost_grid(slope_degrees, cellsize):
     return cost
 
 
-def astar(cost_grid, start, goal):
-    """Grid A* with Euclidean heuristic. start/goal = (row, col). Returns None if no path exists."""
+def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2):
+    """Weighted grid A* with a closed set.
+
+    h_scale: minimum per-cell cost (seconds), so the Euclidean heuristic uses
+    the same units as the step costs. weight > 1 trades a bounded amount of
+    optimality (path cost <= weight * optimal) for a much faster search.
+    Returns a list of (row, col) cells, or None if no path exists.
+    """
     height, width = cost_grid.shape
     if cost_grid[start] == np.inf or cost_grid[goal] == np.inf:
         return None
 
-    def heuristic(a, b):
-        return np.hypot(a[0] - b[0], a[1] - b[1])
+    neighbors = [(-1, 0, 1.0), (1, 0, 1.0), (0, -1, 1.0), (0, 1, 1.0),
+                 (-1, -1, 1.4142), (-1, 1, 1.4142), (1, -1, 1.4142), (1, 1, 1.4142)]
+    goal_r, goal_c = goal
+    h_factor = h_scale * weight
 
-    neighbors = [(-1,0),(1,0),(0,-1),(0,1),(-1,-1),(-1,1),(1,-1),(1,1)]
-    open_set = [(0, start)]
+    open_set = [(0.0, 0.0, start)]
     came_from = {}
-    g_score = {start: 0}
+    g_score = {start: 0.0}
+    closed = set()
 
     while open_set:
-        _, current = heapq.heappop(open_set)
+        _, g_current, current = heapq.heappop(open_set)
+        if current in closed:
+            continue
+        closed.add(current)
         if current == goal:
             path = [current]
             while current in came_from:
@@ -47,20 +59,20 @@ def astar(cost_grid, start, goal):
                 path.append(current)
             return path[::-1]
 
-        for dr, dc in neighbors:
-            nr, nc = current[0] + dr, current[1] + dc
+        r, c = current
+        for dr, dc, step in neighbors:
+            nr, nc = r + dr, c + dc
             if not (0 <= nr < height and 0 <= nc < width):
                 continue
-            step_cost = cost_grid[nr, nc]
-            if step_cost == np.inf:
+            cell_cost = cost_grid[nr, nc]
+            if cell_cost == np.inf:
                 continue
-            diag = 1.4142 if dr != 0 and dc != 0 else 1.0
-            tentative_g = g_score[current] + step_cost * diag
+            tentative_g = g_current + cell_cost * step
             neighbor = (nr, nc)
             if tentative_g < g_score.get(neighbor, np.inf):
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
-                f_score = tentative_g + heuristic(neighbor, goal)
-                heapq.heappush(open_set, (f_score, neighbor))
+                f_score = tentative_g + h_factor * math.hypot(nr - goal_r, nc - goal_c)
+                heapq.heappush(open_set, (f_score, tentative_g, neighbor))
 
     return None
