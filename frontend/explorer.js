@@ -81,7 +81,7 @@ async function run() {
   const ellipsoid = new C.Ellipsoid(3396190, 3396190, 3396190);
   C.Ellipsoid.default = ellipsoid;
   const tilingScheme = new C.GeographicTilingScheme({ellipsoid});
-  const viewer = new C.Viewer("globe", {globe:new C.Globe(ellipsoid), baseLayer:false, baseLayerPicker:false,
+  const viewer = new C.Viewer("globe", {globe:new C.Globe(ellipsoid), baseLayer:false, baseLayerPicker:false, mapMode2D:C.MapMode2D.ROTATE,
     animation:false, timeline:false, geocoder:false, sceneModePicker:false, homeButton:false,
     infoBox:false, selectionIndicator:false, navigationHelpButton:false, fullscreenButton:false,
     requestRenderMode:true, skyAtmosphere:false, skyBox:false, mapProjection:new C.GeographicProjection(ellipsoid)});
@@ -99,23 +99,52 @@ async function run() {
   const cart = (lon, lat, h=0) => C.Cartesian3.fromDegrees(lon, lat, h, ellipsoid);
   const jezero = {lon:77.42,lat:18.45};
   const broad = {lon:66,lat:17};
+  const worldHeight = 8e6;
+  const flat = () => scene.mode === C.SceneMode.SCENE2D;
   function fly(point, height=44000, duration=.8) {
-    viewer.camera.flyTo({destination:cart(point.lon, point.lat, height), duration,
+    const zoom = flat() ? height * 2 : height;
+    viewer.camera.flyTo({destination:cart(point.lon, point.lat, zoom), duration,
       orientation:{heading:0,pitch:-Math.PI/2,roll:0}});
   }
-  fly(broad, 8e6, 0);
-  $("planet").onclick = () => fly(broad, 8e6);
+  fly(broad, worldHeight, 0);
+  const globalView = (duration=.8) => flat()
+    ? viewer.camera.flyTo({destination:C.Rectangle.MAX_VALUE, duration})
+    : fly(broad,worldHeight,duration);
+  $("planet").onclick = () => globalView();
   $("jezero").onclick = () => fly(jezero);
-  $("zoom-in").onclick = () => viewer.camera.zoomIn(Math.max(400, viewer.camera.positionCartographic.height*.30));
+  $("zoom-in").onclick = () => viewer.camera.zoomIn(viewer.camera.positionCartographic.height*.30);
   $("zoom-out").onclick = () => viewer.camera.zoomOut(viewer.camera.positionCartographic.height*.52);
 
   function pick(position) {
-    const ray = viewer.camera.getPickRay(position);
-    const value = ray && (scene.globe.pick(ray, scene) || viewer.camera.pickEllipsoid(position, ellipsoid));
+    const ray = flat() ? null : viewer.camera.getPickRay(position);
+    const value = (ray && scene.globe.pick(ray, scene)) || viewer.camera.pickEllipsoid(position, ellipsoid);
     if (!value) return null;
     const p = ellipsoid.cartesianToCartographic(value);
     return {lon:longitude(C.Math.toDegrees(p.longitude)),lat:C.Math.toDegrees(p.latitude)};
   }
+
+  const modeButton = $("toggle-map-mode");
+  const flatTerrain = new C.EllipsoidTerrainProvider({ellipsoid});
+  let globeTerrain = viewer.terrainProvider;
+  modeButton.onclick = () => {
+    viewer.camera.cancelFlight();
+    const center = pick(new C.Cartesian2(scene.canvas.clientWidth/2, scene.canvas.clientHeight/2));
+    const scale = viewer.camera.positionCartographic.height / (flat() ? 2 : 1);
+    if (flat()) {
+      scene.morphTo3D(0);
+      viewer.terrainProvider = globeTerrain;
+    } else {
+      viewer.terrainProvider = flatTerrain;
+      scene.morphTo2D(0);
+    }
+    scene.screenSpaceCameraController.enableRotate = !flat();
+    if (center && !(flat() && scale >= worldHeight)) fly(center, scale, 0);
+    else globalView(0);
+    modeButton.textContent = flat() ? "3D globe" : "2D map";
+    modeButton.setAttribute("aria-pressed", String(flat()));
+    updateView();
+    scene.requestRender();
+  };
 
   const selected = new C.CustomDataSource("Selected points");
   const planned = new C.CustomDataSource("Candidate routes");
@@ -139,6 +168,26 @@ async function run() {
   const roverHitPoints=[];
   const horizon=new C.EllipsoidalOccluder(ellipsoid);
   const screenPoint=new C.Cartesian2();
+  function strokePoint(lon, lat, height) {
+    return {lon,lat,height,surface:cart(lon,lat,1),terrain:cart(lon,lat,height)};
+  }
+  function splitFlatTrack(points) {
+    const parts=[[]];
+    for (const point of points) {
+      const part=parts.at(-1);
+      const prev=part.at(-1);
+      if (prev && Math.abs(point.lon-prev.lon)>180) {
+        const edge=prev.lon>0?180:-180;
+        const fraction=(edge-prev.lon)/longitude(point.lon-prev.lon);
+        const lat=prev.lat+(point.lat-prev.lat)*fraction;
+        const height=prev.height+(point.height-prev.height)*fraction;
+        part.push(strokePoint(edge,lat,height));
+        parts.push([strokePoint(-edge,lat,height)]);
+      }
+      parts.at(-1).push(point);
+    }
+    return parts;
+  }
   function drawRoutes() {
     const {clientWidth:w,clientHeight:h}=scene.canvas;
     const ratio=window.devicePixelRatio||1;
@@ -152,22 +201,33 @@ async function run() {
     pencil.lineCap="round";
     horizon.cameraPosition=viewer.camera.positionWC;
     roverHitPoints.length=0;
-    for (const stroke of [...roverStrokes,...routeStrokes]) {
+    const isFlat = flat();
+    const groups = [roverStrokes,...routeStrokes.map(stroke=>[stroke])];
+    for (const group of groups) {
+      if (!group.length) continue;
       pencil.beginPath();
-      let previous=false;
-      let lastX=0,lastY=0;
-      for (const point of stroke.points) {
-        if (!horizon.isPointVisible(point.surface)) {previous=false;continue;}
-        const px=C.SceneTransforms.worldToWindowCoordinates(scene,point.terrain,screenPoint);
-        if (!px) {previous=false;continue;}
-        if (previous && Math.hypot(px.x-lastX,px.y-lastY)<1) continue;
-        if (stroke.readInfo && px.x>=0 && px.x<=w && px.y>=0 && px.y<=h)
-          roverHitPoints.push({x:px.x,y:px.y,readInfo:stroke.readInfo});
-        if (previous) pencil.lineTo(px.x,px.y);
-        else pencil.moveTo(px.x,px.y);
-        lastX=px.x;lastY=px.y;
-        previous=true;
+      // The rover archive can contain tens of thousands of short segments.
+      // Batch identical strokes while retaining each segment's click target.
+      for (const stroke of group) {
+        if (isFlat) stroke.flatParts ||= splitFlatTrack(stroke.points);
+        for (const part of isFlat ? stroke.flatParts : [stroke.points]) {
+          let previous=false;
+          let lastX=0,lastY=0;
+          for (const point of part) {
+            if (!isFlat && !horizon.isPointVisible(point.surface)) {previous=false;continue;}
+            const px=C.SceneTransforms.worldToWindowCoordinates(scene,point.terrain,screenPoint);
+            if (!px) {previous=false;continue;}
+            if (previous && Math.hypot(px.x-lastX,px.y-lastY)<1) continue;
+            if (stroke.readInfo && px.x>=0 && px.x<=w && px.y>=0 && px.y<=h)
+              roverHitPoints.push({x:px.x,y:px.y,readInfo:stroke.readInfo});
+            if (previous) pencil.lineTo(px.x,px.y);
+            else pencil.moveTo(px.x,px.y);
+            lastX=px.x;lastY=px.y;
+            previous=true;
+          }
+        }
       }
+      const [stroke] = group;
       pencil.setLineDash(stroke.dash?[5,5]:[]);
       pencil.globalAlpha=stroke.alpha;
       pencil.lineWidth=stroke.width+2;
@@ -181,14 +241,15 @@ async function run() {
   }
   scene.postRender.addEventListener(drawRoutes);
   function routeStroke(geometry, heights, color, width, dash=false, alpha=1) {
-    routeStrokes.push({color,width,dash,alpha,points:geometry.map(([lon,lat],i)=>({
-      surface:cart(lon,lat,1), terrain:cart(lon,lat,heights[i])
-    }))});
+    routeStrokes.push({color,width,dash,alpha,points:geometry.map(([lon,lat],i)=>
+      strokePoint(lon,lat,heights[i] ?? 0))});
   }
   let meta = {};
   let analysisModel="auto";
   let analysisSource="Finest available elevation at each point";
   let pointLock = 0;
+  let inspected;
+  let inspectMark;
   let pickMode = "inspect";
   let controls = {};
   let routeVersion = 0;
@@ -210,12 +271,13 @@ async function run() {
 
   async function inspect(point) {
     const lock = ++pointLock;
+    inspected = {point, lock};
     const target = $("point-info");
     const label = pointText(point.lat, point.lon);
     $("coordinates").textContent = $("footer-coordinates").textContent = label;
     target.replaceChildren(el("p", label),el("p","Loading location data…"));
     try {
-      const {terrain, geology, historical_dust, coverage} = await get(api + `/api/explorer/point?lat=${point.lat}&lon=${point.lon}&model=${analysisModel}`);
+      const {terrain, geology, historical_dust, coverage, elevation_coverage} = await get(api + `/api/explorer/point?lat=${point.lat}&lon=${point.lon}&model=${analysisModel}`);
       if (lock !== pointLock) return;
       target.replaceChildren(el("p",label));
       for (const [key, unit] of [["height","m"],["slope","°"],["roughness","m"]]) {
@@ -223,6 +285,7 @@ async function run() {
         field(target, factorNames[key], value ? `${fmt(value.value,2)} ${unit}` : null);
         if (value) target.append(link(`${value.source.name} · ${fmt(value.source.resolution_m,0)} m`,value.source.url));
       }
+      if (elevation_coverage) field(target,"Best available elevation grid",coverageLabels[elevation_coverage.id]);
       field(target,"Geologic unit",geology ? `${geology.unit} · ${geology.name}` : null);
       if (geology) target.append(link(`Geology · ${geology.scale}`,geology.url));
       for (const key of ["radiation","temperature"]) field(target,factorNames[key],"No matching measurement at this point");
@@ -267,6 +330,10 @@ async function run() {
     const point = pick(event.position);
     if (!point) return;
     if (pickMode !== "inspect") setEndpoint(pickMode, point);
+    else {
+      if (inspectMark) selected.entities.remove(inspectMark);
+      inspectMark = marker(selected,point,"#fff2b1",null,()=>inspect(point));
+    }
     setMode("inspect");
     inspect(point);
   }, C.ScreenSpaceEventType.LEFT_CLICK);
@@ -277,15 +344,30 @@ async function run() {
     enablePickFeatures:false,
   });
   const localRaster = name => new C.UrlTemplateImageryProvider({
-    url:api + `/api/explorer/raster/${name}/{z}/{x}/{y}.png?model=${analysisModel}`, tilingScheme, maximumLevel:17, enablePickFeatures:false,
+    url:api + `/api/explorer/raster/${name}/{z}/{x}/{y}.png?model=${name === "coverage" ? "auto" : analysisModel}`,
+    tilingScheme, maximumLevel:17, enablePickFeatures:false,
   });
-  const addImages = (providers, baseIndex) => providers.map((provider, i) => {
+  const addImages = (providers, baseIndex, errorLabel) => providers.map((provider, i) => {
     provider.errorEvent.addEventListener(event => {
       event.retry = false;
-      $("imagery-status").textContent="Some remote tiles could not load. Coarser imagery remains underneath; source coverage may contain gaps.";
+      if (errorLabel) {
+        const layer=catalog.find(l=>l.id===errorLabel);
+        layer.tileFailed=true;
+        layer.status.textContent="Some tiles from this source could not load.";
+      } else imageryHasGaps=true;
     });
-    return viewer.imageryLayers.addImageryProvider(provider, baseIndex === undefined ? undefined : baseIndex+i);
+    const index = baseIndex === undefined ? undefined : baseIndex+i;
+    if (errorLabel === "coverage") {
+      const layer = new C.ImageryLayer(provider, {
+        minificationFilter:C.TextureMinificationFilter.NEAREST,
+        magnificationFilter:C.TextureMagnificationFilter.NEAREST,
+      });
+      viewer.imageryLayers.add(layer, index);
+      return layer;
+    }
+    return viewer.imageryLayers.addImageryProvider(provider, index);
   });
+  let imageryHasGaps = false;
   const cache = new Map();
   async function cached(url) {
     if (!cache.has(url)) cache.set(url,get(url).catch(error => {cache.delete(url); throw error;}));
@@ -311,8 +393,8 @@ async function run() {
   try {
     meta = await get(api + "/api/explorer/meta");
     $("connection").textContent = meta.ctx && meta.global_dem ? "CTX and Mars terrain data ready" : meta.ctx ? "Jezero CTX ready; global elevation unavailable" : meta.global_dem ? "Global elevation ready; Jezero CTX unavailable" : "CTX and global elevation unavailable";
-    if (meta.global_dem || meta.ctx) {
-      viewer.terrainProvider = new C.CustomHeightmapTerrainProvider({
+    if (meta.global_dem || meta.ctx || meta.hirise) {
+      viewer.terrainProvider = globeTerrain = new C.CustomHeightmapTerrainProvider({
         width:33,height:33,tilingScheme,credit:"NASA PDS MGS/MOLA · USGS MRO/CTX",
         callback:async (x,y,z)=>{
           const level = Math.min(z,17);
@@ -350,6 +432,28 @@ async function run() {
 
   const localResolution = [meta.global_dem ? `${fmt(meta.global_dem.resolution_m,0)} m MOLA` : "",
     meta.ctx ? "20 m CTX" : "", meta.hirise ? "≈ 1 m HiRISE" : ""].filter(Boolean).join(" · ");
+  const molaResolution = meta.global_dem && `MOLA ${fmt(meta.global_dem.resolution_m,0)} m at the equator`;
+  const coverageLabels = {
+    mola: `${molaResolution} · observation count unavailable`,
+    mola_measured: `${molaResolution} · observed cell`,
+    mola_interpolated: `${molaResolution} · interpolated by PDS`,
+    ctx: "CTX · 20 m",
+    hirise: "HiRISE · 1.02 m",
+    missing: "No valid elevation sample",
+  };
+  const coverageKeys = [
+    ...(meta.hirise ? ["hirise"] : []), ...(meta.ctx ? ["ctx"] : []),
+    ...(meta.global_dem ? (meta.elevation_coverage?.mola_counts ? ["mola_measured","mola_interpolated"] : ["mola"]) : []),
+    "missing",
+  ];
+  function addCoverageKey(target) {
+    for (const key of coverageKeys) {
+      const row=el("div",undefined,"unit-key"), swatch=el("span");
+      swatch.style.background=meta.elevation_coverage.colors[key];
+      row.append(swatch,el("small",coverageLabels[key]));
+      target.append(row);
+    }
+  }
   const catalog = [
     {id:"surface", name:"Surface imagery", author:"NASA/JPL/MSSS/UArizona · Viking, MRO CTX and HiRISE", resolution:"Viking 232 m · global CTX ≈10 m served pixels · regional CTX/HiRISE", unit:"Visible-light imagery", detail:"Verified optical mosaics load automatically by footprint and zoom. Global CTX source is nominally 5 m, but this WMTS stops at level 11 (512-pixel tiles, ≈10 m/pixel at the equator). Missing imagery retains the coarser map; source mosaics may have registration seams.", url:trek, on:true, alpha:1, load:()=>imageLayers},
     {id:"height", name:"Elevation", author:"MGS/MOLA and USGS CTX", resolution:localResolution, unit:"m · areoid", legend:"linear-gradient(90deg,#2d317b,#217099,#3b9a88,#e2b962,#be5733,#fdf2dc)", scale:"−9,000 · 0 · 22,000 m", url:mola, load:()=>addImages([localRaster("height")])},
@@ -357,22 +461,23 @@ async function run() {
     {id:"slope", name:"Slope", author:"Derived from elevation models", resolution:localResolution, unit:"°", alpha:.58, legend:"linear-gradient(90deg,#235158,#378e88,#eac952,#f79036,#e94b3b,#901737)", scale:"0 · 5 · 10 · 15 · 20 · ≥30°", url:ctx, load:()=>addImages([localRaster("slope")])},
     {id:"roughness", name:"Surface roughness", author:"MOLA / CTX · derived from digital elevation", resolution:localResolution, unit:"m", detail:"Absolute difference between a cell's elevation and the mean of its four neighbors. Compare values at the same resolution.", legend:"linear-gradient(90deg,#193651,#3e7da7,#5bcdba,#e7ce76,#e97650,#fde6b8)", scale:"0 · 0.5 · 2 · 10 · 200 · ≥1,500 m", url:ctx, load:()=>addImages([localRaster("roughness")])},
     {id:"geology", name:"Geology", author:"USGS SIM 3464 / SIM 3292", resolution:"Jezero 1:75,000 · Mars 1:20,000,000", unit:"Geologic map unit", detail:"Colors distinguish map units. The location panel shows the unit code and map scale.", url:jgeo, alpha:.60, load:async()=>loadGeology()},
-    {id:"thermal", name:"Thermal inertia · source image", author:"MGS / TES · NASA Mars Trek", resolution:"Source sampling approximately 3 km; WMTS only levels 0–1", unit:"Source colors; numerical legend unavailable", detail:"Physical thermal inertia uses J m⁻² K⁻¹ s⁻½. This colorized WMTS has no verified numeric color key in this app: colors are not temperatures or route risk values.", url:trek, load:()=>addImages([wmts("TES_Thermal_Inertia","png",1)])},
-    {id:"ir", name:"Nighttime infrared", author:"Mars Odyssey / THEMIS", resolution:"100 m · approximately ±65°", unit:"Relative infrared image brightness", detail:"Historical mosaic. Light and dark tones show image contrast.", legend:"linear-gradient(90deg,#1a1a1a,#e8e8e8)", url:trek, load:()=>addImages([wmts("THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018","png",9,[-180,-65,180,65])])},
+    {id:"thermal", name:"Thermal inertia · source image", author:"MGS / TES · NASA Mars Trek", resolution:"Source sampling approximately 3 km; WMTS only levels 0–1", unit:"Source colors; numerical legend unavailable", detail:"Physical thermal inertia uses J m⁻² K⁻¹ s⁻½. This colorized WMTS has no verified numeric color key in this app: colors are not temperatures or route risk values.", url:trek, load:()=>addImages([wmts("TES_Thermal_Inertia","png",1)],undefined,"thermal")},
+    {id:"ir", name:"Nighttime infrared", author:"Mars Odyssey / THEMIS", resolution:"100 m · approximately ±65°", unit:"Relative infrared image brightness", detail:"Historical mosaic. Light and dark tones show image contrast.", legend:"linear-gradient(90deg,#1a1a1a,#e8e8e8)", url:trek, load:()=>addImages([wmts("THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018","png",9,[-180,-65,180,65])],undefined,"ir")},
     {id:"temperature", name:"Temperature · MEDA", author:"Perseverance / MEDA ATS", resolution:"One location and time sample in Jezero", unit:"°C", detail:"Select the blue marker to view the archived measurement.", url:meda, load:()=>loadObservations("meda","#7cc8ff")},
     {id:"dust", name:"Dust · historical model", author:"MRO / MCS · Montabone et al.", resolution:"3° × 3° · MY34 Sol 400", unit:"9.3 µm τ · 610 Pa reference", detail:"Atmospheric dust model interpolated from archived observations for the specified sol.", url:dustSource, absent:!meta.dust_available,
       legend:"linear-gradient(90deg,#1c2552,#2f5c97,#41a7ac,#f6bb5e,#f56a36,#992740)", scale:"0 · 0.25 · 0.5 · 1 · 2 · ≥4",
       load:()=>addImages([new C.SingleTileImageryProvider({url:data+"dust-my34-sol400.png",
         tileWidth:720,tileHeight:360,ellipsoid,credit:"Montabone et al. · CC BY-SA 3.0"})])},
     {id:"radiation", name:"Radiation · RAD", author:"Curiosity / RAD E · NASA PDS PPI", resolution:"One archived observation · same-sol rover waypoint", unit:"µGy/h · absorbed dose rate", detail:"Local historical observation, not a global map. The marker uses a same-sol rover endpoint, not exact instrument geometry. No radiation factor is applied to route costs; missing data are unknown.", url:rad, load:()=>loadObservations("radiation","#c5a8f2")},
-    {id:"coverage", name:"Elevation data coverage", author:"USGS · CTX and HiRISE cell coverage", resolution:localResolution, unit:"Valid raster cell", detail:"Teal shows CTX coverage and purple shows HiRISE coverage. MOLA provides regional planning data elsewhere.", legend:"linear-gradient(90deg,#2fd8c5 50%,#bc96f6 50%)", url:ctx, load:()=>addImages([localRaster("coverage")])},
+    {id:"coverage", name:"Elevation data coverage", author:"NASA PDS MOLA · USGS CTX · HiRISE", resolution:localResolution || "No elevation grids loaded",
+      unit:"Valid raster cell", detail:"Each pixel shows the finest installed model with a valid elevation sample. Zoom in for small local patches. Independent of the selected route grid.",
+      url:mola, alpha:1, absent:!meta.elevation_coverage, load:()=>addImages([localRaster("coverage")],undefined,"coverage")},
     {id:"science", name:"Science sites", author:"NASA/JPL · Perseverance", resolution:"Mission markers with varying location accuracy", unit:"Point", detail:"Select an orange marker to view a science site.", url:"https://science.nasa.gov/mission/mars-2020-perseverance/", on:true, load:()=>loadScience()},
   ];
   for (const layer of catalog) {
-    if (["height","relief","slope","roughness","coverage"].includes(layer.id))
+    if (["height","relief","slope","roughness"].includes(layer.id))
       layer.absent=!meta.ctx && !meta.hirise && !meta.global_dem;
     if (["height","relief"].includes(layer.id)) layer.alpha=1;
-    if (layer.id==="coverage") layer.scale="Teal: valid CTX cell · purple: valid HiRISE cell · transparent: no local DEM; MOLA may still be available";
     const key=layer.id==="relief"?"height":layer.id;
     const scheme=meta.legends?.[key];
     if (scheme) {
@@ -462,6 +567,8 @@ async function run() {
         }
       }
     }
+    const coverageOverlay = catalog.find(l=>l.id==="coverage").items?.[0];
+    if (coverageOverlay?.show) viewer.imageryLayers.raiseToTop(coverageOverlay);
     if (layer.id==="geology") updateView();
     if (layer.id==="surface") updateOptical();
     updateLegends();
@@ -471,12 +578,20 @@ async function run() {
   async function toggleLayer(layer) {
     if (layer.checkbox.checked && !layer.items) {
       layer.status.textContent="Loading…";
+      let pending;
       try {
-        layer.pending ||= Promise.resolve(layer.load());
-        layer.items=await layer.pending;
+        pending = layer.pending ||= Promise.resolve(layer.load());
+        const items = await pending;
+        if (layer.pending !== pending) {
+          for (const item of items) if (item instanceof C.ImageryLayer) viewer.imageryLayers.remove(item,true);
+          return;
+        }
+        layer.items=items;
         layer.status.textContent=layer.id==="radiation"?"Only a local Gale Crater archive record. Use Show archived observation; no radiation coverage elsewhere.":
-          layer.id==="temperature"?"Only a local Jezero archive record. Use Show archived observation; no global temperature coverage.":"";
+          layer.id==="temperature"?"Only a local Jezero archive record. Use Show archived observation; no global temperature coverage.":
+          layer.tileFailed?"Some tiles from this source could not load.":"";
       } catch (error) {
+        if (pending && layer.pending !== pending) return;
         layer.pending=null;
         layer.checkbox.checked=false;
         layer.status.textContent=error.message;
@@ -493,6 +608,8 @@ async function run() {
       if (layer.legend) {
         const gradient=el("div",undefined,"legend");gradient.style.background=layer.legend;
         box.append(gradient,el("small",layer.scale || layer.unit));
+      } else if (layer.id==="coverage") {
+        addCoverageKey(box);
       } else if (layer.id==="geology") {
         box.append(el("small","Display palette; unit names follow USGS maps. Not official map colors."));
         for (const p of layer.unitLegend?.[layer.legendScope || "global"] || []) {
@@ -515,10 +632,23 @@ async function run() {
   function updateOptical() {
     const surface=catalog.find(l=>l.id==="surface");
     if (!surface?.checkbox) return;
-    const height=viewer.camera.positionCartographic.height;
-    const view=viewer.camera.computeViewRectangle(ellipsoid);
-    const box=view && [C.Math.toDegrees(view.west),C.Math.toDegrees(view.south),
-                       C.Math.toDegrees(view.east),C.Math.toDegrees(view.north)];
+    if (!surface.checkbox.checked) {
+      $("imagery-status").textContent="";
+      return;
+    }
+    const height=viewer.camera.positionCartographic.height / (flat() ? 2 : 1);
+    const camera=viewer.camera;
+    let box;
+    if (flat()) {
+      const {longitude:lon,latitude:lat}=camera.positionCartographic;
+      const {left,bottom,right,top}=camera.frustum;
+      const radius=ellipsoid.maximumRadius;
+      box=[Math.max(-Math.PI,lon+left/radius),Math.max(-Math.PI/2,lat+bottom/radius),
+           Math.min(Math.PI,lon+right/radius),Math.min(Math.PI/2,lat+top/radius)].map(C.Math.toDegrees);
+    } else {
+      const view=camera.computeViewRectangle(ellipsoid);
+      box=view && [view.west,view.south,view.east,view.north].map(C.Math.toDegrees);
+    }
     const products=verifiedImagery.layers || [];
     const selection=opticalSelection(products,height,box);
     const {detail}=selection;
@@ -554,6 +684,7 @@ async function run() {
     $("imagery-status").textContent=best?`${best.instrument} · finest served pixel ≈ ${fmt(best.resolution_m,2)} m at equator. Footprint may contain gaps; actual tile detail varies.`:
       "Viking 232 m color context. Zoom in for CTX/HiRISE; gaps use a coarser grayscale background.";
     if (detail>0) $("imagery-status").textContent+=" Coarser gaps remain grayscale; original mosaic seams can remain.";
+    if (imageryHasGaps) $("imagery-status").textContent+=" Some imagery tiles could not load.";
   }
   for (const layer of catalog) {
     const row=el("div",undefined,"layer-row");
@@ -567,6 +698,7 @@ async function run() {
       const gradient=el("div",undefined,"legend");gradient.style.background=layer.legend;
       details.append(gradient,el("small",layer.scale));
     }
+    if (layer.id==="coverage" && !layer.absent) addCoverageKey(details);
     details.append(el("br"),link("Data source",layer.url));
     if (["height","slope","roughness","coverage"].includes(layer.id) && meta.hirise)
       details.append(el("br"),link("Jezero HiRISE elevation model",meta.hirise.url));
@@ -601,13 +733,11 @@ async function run() {
   const updateView = () => {
     updateOptical();
     const lonlat=pick(new C.Cartesian2(scene.canvas.clientWidth/2,scene.canvas.clientHeight/2));
-    const high=viewer.camera.positionCartographic.height;
+    const high=viewer.camera.positionCartographic.height / (flat() ? 2 : 1);
     const b=meta.ctx_bounds;
     const local=b && lonlat && high<220000 && lonlat.lon>=b[0] && lonlat.lon<=b[2] && lonlat.lat>=b[1] && lonlat.lat<=b[3];
-    const fine=meta.hirise_bounds;
-    const precise=fine && lonlat && high<10000 && lonlat.lon>=fine[0] && lonlat.lon<=fine[2] && lonlat.lat>=fine[1] && lonlat.lat<=fine[3];
-    $("map-mode").textContent=local?"Jezero · 3D":"Mars · 3D";
-    $("footer-source").textContent=precise?"3D terrain · HiRISE ≈ 1 m":local?"3D terrain · CTX 20 m":meta.global_dem?`3D terrain · MOLA ${fmt(meta.global_dem.resolution_m,0)} m`:"Mars 2000 · R 3,396.19 km";
+    $("map-mode").textContent=`${local ? "Jezero" : "Mars"} · ${flat() ? "2D" : "3D"}`;
+    $("footer-source").textContent=flat()?"2D geographic projection · Mars 2000":"3D globe · Mars 2000";
     for (const layer of catalog.filter(l=>l.id==="geology")) if (layer.items?.length===2 && layer.checkbox.checked) {
       layer.items[1].show=Boolean(local);
       layer.items[0].show=!local;
@@ -699,8 +829,7 @@ async function run() {
       const heights=roverHeights.get(id);
       for (const f of track.features) {
         roverStrokes.push({color:"#f3d37b",width:3,dash:true,alpha:1,readInfo:()=>showSegment(f),
-          points:f.geometry.coordinates.map(([lon,lat])=>({surface:cart(lon,lat,1),
-            terrain:cart(lon,lat,heights[vertex++] ?? 0)}))});
+          points:f.geometry.coordinates.map(([lon,lat])=>strokePoint(longitude(lon),lat,heights[vertex++] ?? 0))});
       }
       const where={lon:track.center[0],lat:track.center[1]};
       marker(mission,where,"#f3d37b",name,()=>showSegment(track.features[Math.floor(track.features.length/2)]));
@@ -805,7 +934,11 @@ async function run() {
   };
   $("reset").onclick=()=>{
     setAnalysisModel("auto","Finest available elevation at each point");
-    routeVersion++;pointLock++;selected.entities.removeAll();planned.entities.removeAll();searchMark=null;routeStrokes.length=0;
+    routeVersion++;pointLock++;selected.entities.removeAll();planned.entities.removeAll();
+    searchMark=inspectMark=null;inspected=null;routeStrokes.length=0;
+    $("point-info").textContent="Select a measurement, science site, or surface location.";
+    $("coordinates").textContent="Select a point on the map";
+    $("footer-coordinates").textContent="Latitude · east-positive longitude";
     for(const id of ["start","end"]) { $(id).value="";delete endpoints[id]; }
     $("route-status").textContent=""; $("route-results").replaceChildren();$("calculate").disabled=false;
     setMode("inspect");scene.requestRender();
@@ -813,18 +946,23 @@ async function run() {
   function setAnalysisModel(model,source) {
     if (analysisModel===model) return;
     analysisModel=model;analysisSource=source;
+    if (inspected?.lock === pointLock) inspect(inspected.point);
     for (const layer of catalog.filter(l=>["height","relief","slope","roughness"].includes(l.id))) {
       for (const item of layer.items || []) viewer.imageryLayers.remove(item,true);
       layer.items=null;layer.pending=null;
       if (layer.checkbox.checked) toggleLayer(layer);
     }
   }
+  modeButton.disabled=false;
   window.marsExplorer={viewer,meta};
 }
 
 run().catch(error=>{
   $("connection").textContent="Could not start the 3D map";
   $("connection").classList.add("status-error");
-  feedback(error.message+" · Open 2D Jezero from the top bar.");
+  feedback(error.message);
+  const fallback=el("a","Open classic Jezero map","button quiet");
+  fallback.href="legacy.html";
+  $("toggle-map-mode").replaceWith(fallback);
   console.error(error);
 });

@@ -22,10 +22,12 @@ Run these commands from the repository root. Use the USGS CTX mosaic for the Jez
 ```powershell
 curl.exe -fL -o data/jezero_dem.tif "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif"
 curl.exe -fL -o data/explorer/mola16.img "https://pds-geosciences.wustl.edu/mgs/urn-nasa-pds-mgs_mola_topography_derived/meg016/megt90n000eb.img"
+curl.exe -fL -o data/explorer/mola16-counts.img "https://pds-geosciences.wustl.edu/mgs/urn-nasa-pds-mgs_mola_topography_derived/meg016/megc90n000eb.img"
 ```
 
 - **Jezero CTX, 20 m, 90.3 MB.** SHA-256 `ba7f706ea1b5d63a562f28a7dcf7a7f3c79bce7f048e6974b57e8a33c30d1ba2`.
 - **MOLA, 16 pixels per degree, 33.2 MB.** SHA-256 `d18d9b9ab8c5516d02e157dd2cde0f1d0d160c21940e953ba22391269a545e7b`. An optional [4-pixel-per-degree grid](https://pds-geosciences.wustl.edu/mgs/urn-nasa-pds-mgs_mola_topography_derived/meg004/megt90n000cb.img) can be saved as `data/explorer/mola.img`. The app chooses the finer available MOLA grid.
+- **MOLA observation counts, 33.2 MB.** Optional companion grid for coloring observed and interpolated cells separately. SHA-256 `9a300c6cd9f5a282ae31299be228ea2e75993049e88c9f6ab69a84f4db5f01d7`.
 - The small Jezero HiRISE elevation crop, MOLA metadata labels, science sites, adapted GeoJSON layers and preview imagery are included. Source archives belong in `data/raw/`, and local intermediate products belong in `data/processed/`. [Sources, processing and credits](docs/explorer-data.md)
 
 ### Start the application
@@ -34,15 +36,15 @@ curl.exe -fL -o data/explorer/mola16.img "https://pds-geosciences.wustl.edu/mgs/
 .\.venv\Scripts\python.exe backend/app.py
 ```
 
-Open [127.0.0.1:5000](http://127.0.0.1:5000/). Flask serves the frontend and API on the same port. If port 5000 is occupied, run `$env:MARS_PORT = "5055"` before starting and open [127.0.0.1:5055](http://127.0.0.1:5055/). Select **2D Jezero** to open the Leaflet view.
+Open [127.0.0.1:5000](http://127.0.0.1:5000/). Flask serves the frontend and API on the same port. If port 5000 is occupied, run `$env:MARS_PORT = "5055"` before starting and open [127.0.0.1:5055](http://127.0.0.1:5055/). Select **2D map** for a flat map of all Mars. Select **3D globe** to return. The mode switch preserves selected locations, overlays and route results.
 
-For a separate 2D frontend server, keep Flask on port 5000 and run `python -m http.server 8000` from the repository root in a second terminal. Open [the 2D map](http://localhost:8000/frontend/legacy.html).
+For the classic Leaflet Jezero page, open [the classic map](http://127.0.0.1:5000/frontend/legacy.html). To serve that page separately, keep Flask on port 5000 and run `python -m http.server 8000` from the repository root in a second terminal. Open [the 2D map](http://localhost:8000/frontend/legacy.html).
 
 ### Try the demo
 
 For the demo, enter `18.44, 77.42` as the start and `18.46, 77.40` as the destination. Compare the candidate route cards and open the slope or coverage layers. The dashed purple line marks gaps in selected data. High-resolution Mars Trek tiles and rover photos require an internet connection.
 
-[3D data sources, method and limitations](docs/explorer-data.md).
+[Data sources, method and limitations](docs/explorer-data.md) · [2D/3D validation report](docs/explorer-mode-validation.md).
 
 [English submission draft, slide outline and demo script](docs/submission.md).
 
@@ -104,7 +106,7 @@ API details: [`docs/integration.md`](docs/integration.md).
 - A 20 m elevation model cannot see boulders or small scarps, so real slopes can be steeper than the model shows. **The route is a planning aid, not a safety certification.**
 - The 20° limit is a conservative prototype parameter, not a NASA standard.
 - The 2.2 km/h walking pace is an adapted assumption, not measured astronaut performance.
-- The 2D map uses a 463 m/pixel MOLA hillshade for context. The 3D planner can use the much coarser global MOLA elevation grid outside local DEM coverage.
+- The classic Leaflet view displays a 463 m/pixel MOLA hillshade for context. Both Explorer modes use the coarser MEGDR grid for regional routes outside local DEM coverage.
 - The 3D Explorer has no fixed distance cap: long journeys switch to a bounded, adaptively sampled MOLA search, with native cells checked along returned paths. Polar endpoints are accepted. Search resolution, the coarse DEM, terrain constraints and missing measurements limit what can be concluded. The legacy 2D `/route` API retains its local 30 km limit.
 
 ## Future work

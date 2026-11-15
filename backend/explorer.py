@@ -30,6 +30,14 @@ TERRAIN_FACTORS = {"slope", "roughness"}
 CONTEXT_FACTORS = {"geology", "thermal", "temperature", "dust", "radiation"}
 SLOPE_LIMIT = 20.0
 CAUTION_SLOPE = 15.0
+COVERAGE_COLORS = {
+    "missing": "#30323f",
+    "mola": "#417eae",
+    "mola_measured": "#417eae",
+    "mola_interpolated": "#db9d51",
+    "ctx": "#2fd8c5",
+    "hirise": "#bc96f6",
+}
 
 
 def wrap(lon):
@@ -83,6 +91,13 @@ class Terrain:
             if path.is_file() and path.stat().st_size == (180 * density) * (360 * density) * 2:
                 self.globals[density] = np.memmap(path, dtype=">i2", mode="r", shape=(180 * density, 360 * density))
         self.density = max(self.globals, default=0)
+        self.observation_counts = None
+        if self.density:
+            name = "mola16" if self.density == 16 else "mola"
+            path = DATA / f"{name}-counts.img"
+            grid = self.globals[self.density]
+            if path.is_file() and path.stat().st_size == grid.nbytes:
+                self.observation_counts = np.memmap(path, dtype=">i2", mode="r", shape=grid.shape)
 
     @property
     def global_source(self):
@@ -133,6 +148,20 @@ class Terrain:
                 local = self.sample_local(product, key, lon, lat)
                 values = np.where(np.isfinite(local),local,values)
         return values
+
+    def elevation_coverage(self, lon, lat):
+        """Classify valid DEM samples independently of the selected routing grid."""
+        codes = np.zeros(np.shape(lon), dtype=np.uint8)
+        if self.density:
+            valid = np.isfinite(self.sample_global("height", lon, lat))
+            codes[valid] = 1
+            if self.observation_counts is not None:
+                counts = self.observation_counts[self.global_indexes(lon, lat, self.density)]
+                codes[valid & (counts > 0)] = 2
+                codes[valid & (counts == 0)] = 3
+        codes[np.isfinite(self.sample_local(self.ctx, "height", lon, lat))] = 4
+        codes[np.isfinite(self.sample_local(self.hirise, "height", lon, lat))] = 5
+        return codes
 
     def sample_model(self, key, lon, lat, level, model="auto"):
         if model == "auto":
@@ -408,6 +437,15 @@ def candidate_routes(terrain, start, end, factors, coverage_factors):
 
 def register_explorer(app, ctx):
     terrain = Terrain(ctx)
+    coverage_ids = tuple(COVERAGE_COLORS)
+    coverage_palette = np.array([
+        (*bytes.fromhex(color[1:]), 255) for color in COVERAGE_COLORS.values()
+    ], dtype=np.uint8)
+    coverage_sources = {
+        "ctx": CTX_SOURCE if terrain.bounds(terrain.ctx) else None,
+        "hirise": HIRISE_SOURCE if terrain.hirise else None,
+        "mola": terrain.global_source if terrain.density else None,
+    }
     limits=[]
     if terrain.density:
         values=terrain.globals[terrain.density]
@@ -452,6 +490,10 @@ def register_explorer(app, ctx):
         return jsonify({"ctx_bounds": ctx_bounds, "ctx": CTX_SOURCE if ctx_bounds else None,
                         "hirise_bounds":terrain.bounds(terrain.hirise), "hirise":HIRISE_SOURCE if terrain.hirise else None,
                         "global_dem": terrain.global_source if terrain.density else None,
+                        "elevation_coverage": {
+                            "colors": COVERAGE_COLORS,
+                            "mola_counts": terrain.observation_counts is not None,
+                        },
                         "observations":json_data("observations.json") or [],
                         "imagery":json_data("imagery.json") or {"layers":[]},
                         "legends":{**{key:{"values":values,"colors":["#%02x%02x%02x" % tuple(c) for c in colors]}
@@ -474,8 +516,8 @@ def register_explorer(app, ctx):
         model=request.args.get("model","auto")
         if model not in {"auto","mola","ctx","hirise"}:
             return jsonify({"error":"Unknown terrain model."}),400
+        lon_a, lat_a = np.array([lon]), np.array([lat])
         for key in ("height", "slope", "roughness"):
-            lon_a, lat_a = np.array([lon]), np.array([lat])
             value = float(terrain.sample_local(terrain.hirise, key, lon_a, lat_a)[0])
             source = HIRISE_SOURCE
             if not math.isfinite(value):
@@ -488,15 +530,20 @@ def register_explorer(app, ctx):
                 value=float(terrain.sample_model(key,lon_a,lat_a,17,model)[0])
                 source={"ctx":CTX_SOURCE,"hirise":HIRISE_SOURCE,"mola":terrain.global_source if terrain.density else None}[model]
             result[key] = {"value": round(value, 2), "source": source} if math.isfinite(value) else None
-        return jsonify({"lon":lon, "lat":lat, "terrain":result, "geology":geology_at(lon, lat),
-                        "historical_dust":historical_dust(lon,lat),
+        coverage_id = coverage_ids[terrain.elevation_coverage(lon_a, lat_a)[0]]
+        source_id = "mola" if coverage_id.startswith("mola") else coverage_id
+        unit = geology_at(lon, lat)
+        dust = historical_dust(lon, lat)
+        return jsonify({"lon":lon, "lat":lat, "terrain":result, "geology":unit,
+                        "elevation_coverage":{"id":coverage_id,"source":coverage_sources.get(source_id)},
+                        "historical_dust":dust,
                         "coverage":{**{k:{"status":"available" if v else "missing","source":v["source"] if v else None}
                                       for k,v in result.items()},
-                                    "geology":{"status":"available" if geology_at(lon,lat) else "missing"},
+                                    "geology":{"status":"available" if unit else "missing"},
                                     "radiation":{"status":"missing","detail":"No time-matched radiation measurement. Archived RAD data are local to Curiosity; missing is not zero dose."},
                                     "temperature":{"status":"missing","detail":"No time-matched air temperature measurement."},
                                     "thermal":{"status":"context_only","detail":"Colorized TES imagery has no calibrated numeric sampling in this app."},
-                                    "dust":{"status":"historical_context" if historical_dust(lon,lat) else "missing"}}})
+                                    "dust":{"status":"historical_context" if dust else "missing"}}})
 
     @app.post("/api/explorer/heights")
     def explorer_heights():
@@ -531,11 +578,7 @@ def register_explorer(app, ctx):
             return None
         lon, lat = coords
         if kind == "coverage":
-            valid = np.isfinite(terrain.sample_local(terrain.ctx, "height", lon, lat))
-            fine = np.isfinite(terrain.sample_local(terrain.hirise, "height", lon, lat))
-            rgba = np.zeros((*valid.shape, 4), dtype=np.uint8)
-            rgba[valid] = (47,216,197,180)
-            rgba[fine] = (188,150,246,205)
+            rgba = coverage_palette[terrain.elevation_coverage(lon, lat)]
         else:
             values = terrain.sample_model("height" if kind == "relief" else kind, lon, lat, z,model)
             steps, colors = schemes["height" if kind == "relief" else kind]
@@ -564,7 +607,7 @@ def register_explorer(app, ctx):
         model=request.args.get("model","auto")
         if model not in {"auto","mola","ctx","hirise"}:
             return jsonify({"error":"Unknown terrain model."}),400
-        image = raster_tile(kind, z, x, y,model)
+        image = raster_tile(kind, z, x, y, "auto" if kind == "coverage" else model)
         return send_file(io.BytesIO(image), mimetype="image/png", max_age=3600) if image else ("", 404)
 
     @lru_cache(maxsize=192)

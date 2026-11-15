@@ -19,22 +19,28 @@ The Leaflet license and Perseverance science site credits are listed in [Data so
 
 ## Routing and coverage
 
-- The 3D globe uses a spherical Mars 2000 reference radius of 3,396,190 m with planetocentric latitude and east-positive longitude. Elevation detail switches from MOLA to CTX near Jezero, then to HiRISE within the bundled stereo window at higher zoom. Imagery, terrain rendering, and analysis can use different resolutions.
+- Both maps use a spherical Mars 2000 reference radius of 3,396,190 m with planetocentric latitude and east-positive longitude. Elevation detail switches from MOLA to CTX near Jezero, then to HiRISE within the bundled stereo window at higher zoom. Imagery, terrain rendering, and analysis can use different resolutions.
 - Each route uses one elevation grid. The 3D Explorer has no fixed distance or ±87° latitude cap; long local requests switch to MOLA. Global search uses at most 80,000 adaptively sampled nodes, then checks native cells and diagonal neighbors along the candidate. Global edge costs and the distance heuristic use Mars great-circle distances that vary by latitude. Geometry connects the exact requested endpoints; their connectors are sampled against the selected DEM. The reported search-grid offset describes internal sampling, not an unconnected route endpoint.
 - The search excludes cells above the prototype 20° slope limit and cells without valid elevation or slope. Diagonal moves require both adjacent cells to be passable. Segments at or above 15° receive a slope warning.
 - Surface roughness is the absolute difference between a cell's elevation and the mean elevation of its four neighbors. Route profiles apply different weights to slope and roughness. Identical candidate paths share a single route card.
 - Coverage applies to sampled route cells. Geology coverage reflects mapped unit boundaries. Archived temperature and radiation measurements are point samples. The dust layer describes a historical sol. The route planner reports gaps in environmental data that lack matching locations and times.
 - The 20 m CTX grid cannot resolve boulders or small fissures. MOLA supports regional planning. The approximately 1 m HiRISE grid is selected when both endpoints have valid elevation inside the bundled stereo window.
 
+## Elevation data coverage
+
+The coverage tiles use the same geographic grid in 2D and 3D. Every pixel samples the installed DEMs at its center. HiRISE takes precedence over valid CTX, then valid MOLA. The GeoTIFF NoData samples fall back to the next available grid. Small regional patches appear when zoom resolves their size. The coverage key also appears in the location panel and is independent of the route analysis grid.
+
+The MOLA MEGDR elevation grid supplies interpolated heights where its source observation count is zero. The optional matching PDS count grid distinguishes such cells from cells with at least one observation. If the count grid is unavailable, the key reports that observation counts are unavailable. Missing elevation means none of the installed grids has a valid height at that sample. [NASA PDS topography and count products](https://pds-geosciences.wustl.edu/missions/mgs/megdr.html)
+
 ## Display and analysis consistency
 
 The elevation, slope and roughness keys use the backend's exact interpolation stops; historical dust embeds its source preparation palette in the data product. Height defaults to full opacity. Lower opacity mixes colors with underlying layers and is labeled accordingly. Topographic relief uses the same height hues with DEM-derived illumination, sampled with a halo to avoid tile-edge derivative artifacts. Elevation is relative to the Martian areoid, not Earth sea level.
 
-After selecting a route, quantitative tiles and point queries use that route's one DEM (HiRISE, CTX or MOLA). Outside that grid they return no data, rather than silently changing source. Clear resets inspection to the finest available model. The separate 3D terrain footer describes geometry rendering; it can differ from the explicitly named route analysis grid.
+After selecting a route, quantitative tiles and point queries use that route's one DEM (HiRISE, CTX or MOLA). Outside that grid they return no data, rather than silently changing source. Clear resets inspection to the finest available model. The flat map displays the same scientific imagery and analysis tiles over a planar surface. The 3D globe can render terrain from a different grid than the route analysis.
 
 The TES layer remains a source-rendered thermal-inertia image. A numerical palette calibration has not been established, so its colors are not assigned numerical inertia or temperature values. THEMIS brightness is relative infrared imagery, not Kelvin. Geology uses an application palette with USGS unit names, not the official printed map colors. The point panel reports numerical terrain, geology, historical dust, optical footprints and missing current environmental observations separately.
 
-Refresh official optical capabilities and the local PDS RAD evidence with `python scripts/verify_explorer_sources.py` (network required; Python standard library only). This does not download a global image mosaic or extrapolate radiation. Run `python -m pytest backend/tests -q` with the bundled real data to repeat the numerical checks. See [audit and validation](explorer-layer-audit.md).
+Refresh official optical capabilities and the local PDS RAD evidence with `python scripts/verify_explorer_sources.py` (network required; Python standard library only). This does not download a global image mosaic or extrapolate radiation. Run `python -m pytest backend/tests -q` with the locally installed DEMs to repeat the numerical checks. See [audit and validation](explorer-layer-audit.md).
 
 
 ## Rebuild the display layers

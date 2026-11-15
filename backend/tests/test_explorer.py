@@ -136,3 +136,59 @@ def test_coarse_search_checks_barrier_between_native_nodes(monkeypatch):
         coordinates=route['geometry']['coordinates']
         assert [1.0,0.0] not in coordinates
         assert route['properties']['max_slope_deg']==0
+
+
+def test_coverage_cross_checks_point_and_categorical_raster():
+    import io
+    from PIL import Image
+
+    locations = [(137.44, -4.59, "mola", 6), (77.40, 18.45, "ctx", 10),
+                 (77.41, 18.45, "hirise", 12), (179.95, 9.9, "mola", 7),
+                 (-179.95, 9.9, "mola", 7)]
+    with app.test_client() as client:
+        meta = client.get("/api/explorer/meta").json
+        if not all(meta[name] for name in ("global_dem", "ctx", "hirise")):
+            pytest.skip("MOLA, CTX and HiRISE are required")
+        for lon, lat, expected, z in locations:
+            size = 2**z * 256
+            col = int((lon + 180) * size / 180)
+            row = int((90 - lat) * size / 180)
+            pixel_lon = (col + .5) * 180 / size - 180
+            pixel_lat = 90 - (row + .5) * 180 / size
+            point = client.get(f"/api/explorer/point?lat={pixel_lat}&lon={pixel_lon}&model=mola").json
+            coverage = point["elevation_coverage"]
+            assert coverage["source"]["id"] == expected
+            if pixel_lon < 0:
+                wrapped = client.get(f"/api/explorer/point?lat={pixel_lat}&lon={pixel_lon + 360}").json
+                assert wrapped["elevation_coverage"] == coverage
+                assert wrapped["terrain"]["height"] == point["terrain"]["height"]
+            prefix = f"/api/explorer/raster/coverage/{z}/{col // 256}/{row // 256}.png"
+            response = client.get(prefix)
+            assert client.get(prefix + "?model=ctx").data == response.data
+            color = meta["elevation_coverage"]["colors"][coverage["id"]]
+            with Image.open(io.BytesIO(response.data)) as image:
+                assert image.getpixel((col % 256, row % 256)) == (*bytes.fromhex(color[1:]), 255)
+
+
+def test_coverage_indicates_missing_and_interpolated_cells(monkeypatch, tmp_path):
+    import explorer
+    from rasterio.transform import from_origin
+
+    monkeypatch.setattr(explorer, "DATA", tmp_path)
+    local = {
+        "height": np.array([[42, np.nan], [np.nan, np.nan]]),
+        "transform": from_origin(0, 2, 1, 1),
+        "to_xy": lambda lon, lat: (lon, lat),
+    }
+    terrain = explorer.Terrain(local)
+    lon, lat = np.array([.5, 1.5, 2.5]), np.array([1.5, 1.5, 1.5])
+    assert [tuple(explorer.COVERAGE_COLORS)[i] for i in terrain.elevation_coverage(lon, lat)] == [
+        "ctx", "missing", "missing"
+    ]
+    terrain.density = 4
+    terrain.globals[4] = np.full((720, 1440), 10, dtype=np.int16)
+    terrain.observation_counts = np.zeros((720, 1440), dtype=np.int16)
+    terrain.observation_counts[354, 6] = 3
+    assert [tuple(explorer.COVERAGE_COLORS)[i] for i in terrain.elevation_coverage(lon, lat)] == [
+        "ctx", "mola_measured", "mola_interpolated"
+    ]

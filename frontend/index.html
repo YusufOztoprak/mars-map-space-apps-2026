@@ -15,7 +15,7 @@
     <div class="brand"><span class="orb"></span><div><h1>Mars Explorer</h1><small>Surface exploration and route planning</small></div></div>
     <div class="header-tools">
       <span id="connection" role="status">Loading data</span>
-      <a class="button quiet" href="legacy.html">2D Jezero</a>
+      <button id="toggle-map-mode" type="button" class="quiet" aria-pressed="false" disabled>2D map</button>
     </div>
   </header>
   <main>
@@ -44,12 +44,12 @@
       </section>
     </aside>
 
-    <section class="viewport" aria-label="Interactive Mars globe">
+    <section class="viewport" aria-label="Interactive Mars map">
       <div id="globe"></div>
       <canvas id="route-canvas" aria-hidden="true"></canvas>
       <div class="map-top">
         <span id="map-mode">Mars · 3D</span>
-        <div class="map-tools"><button id="planet">Globe</button><button id="jezero">Jezero</button>
+        <div class="map-tools"><button id="planet">Global view</button><button id="jezero">Jezero</button>
           <button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button></div>
       </div>
       <div id="map-feedback" role="status" class="map-message" hidden></div>

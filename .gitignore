@@ -225,6 +225,9 @@ __marimo__/
 /data/processed/
 /data/explorer/mola.img
 /data/explorer/mola16.img
+/data/explorer/mola*-counts.img
+/data/explorer/mola*-counts.img.part
+/data/explorer/mola*-counts.lbl
 
 # Local secrets
 .env.*
