@@ -1,0 +1,14 @@
+✔ far globe retains original color and has no optical patches (0.6461ms)
+✔ close fallback is fully grayscale and sparse HiRISE is not drawn at regional zoom (0.1556ms)
+✔ zoom blending is bounded and monotonic (0.2441ms)
+✔ regional footprints must cover the whole view (0.1689ms)
+✔ close Jezero chooses a genuinely finer full-view regional product (0.201ms)
+✔ publisher LOD fixes HiRISE native pixel size; invalid matrices are excluded (0.111ms)
+ℹ tests 6
+ℹ suites 0
+ℹ pass 6
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 59.974

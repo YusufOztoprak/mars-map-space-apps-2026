@@ -1,13 +1,11 @@
-// Execute unmodified frontend at a pinned revision. Leaflet and HTTP are doubles;
+// Execute the checked-out frontend sources. Leaflet and HTTP are doubles;
 // this verifies application flow, not browser rendering, tiles, or real CORS.
 const {execFileSync} = require('node:child_process');
 const vm = require('node:vm');
 const assert = require('node:assert/strict');
 const test = require('node:test');
-const revision = 'e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583';
-const source = name => process.env.FRONTEND_SNAPSHOT_DIR
- ? require('node:fs').readFileSync(require('node:path').join(process.env.FRONTEND_SNAPSHOT_DIR,name),'utf8')
- : execFileSync('git', ['show', `${revision}:frontend/${name}`], {encoding:'utf8'});
+const source = name => require('node:fs').readFileSync(require('node:path').join(
+ process.env.FRONTEND_SNAPSHOT_DIR || require('node:path').join(__dirname,'../frontend'),name),'utf8');
 const config = source('config.js'), app = source('app.js');
 function harness(response, failure) {
   const calls=[], drawn=[], removed=[];
@@ -21,7 +19,7 @@ function harness(response, failure) {
     DomUtil:{create:dom},Control:{extend:definition=>class {
       addTo(){this._div=definition.onAdd.call(this);return this}
     }},geoJSON:data=>{drawn.push(data);return layer()}};
-  const context=vm.createContext({L,window:{matchMedia:()=>({matches:false})},document:{createElement:dom,createTextNode:s=>s},TypeError,AbortController,setTimeout,clearTimeout,console,
+  const context=vm.createContext({L,location:{port:'8000'},window:{matchMedia:()=>({matches:false})},document:{createElement:dom,createTextNode:s=>s},TypeError,AbortController,setTimeout,clearTimeout,console,
     fetch:async(url, options)=>{
       if(!options)return {ok:false,status:404};
       calls.push({url,options}); if(failure)throw new TypeError('offline');
@@ -41,28 +39,28 @@ test('click sequence, request mapping, route metrics and reset',async()=>{
  assert.equal(h.calls[0].options.method,'POST');
  assert.deepEqual(JSON.parse(h.calls[0].options.body),{
  start:{lat:18.4,lng:77.4,lon:77.4},end:{lat:18.41,lng:77.41,lon:77.41}});
- assert.equal(h.drawn.length,2); assert.match(h.run('rotaMetrikleri({distance_km:1}).mesafe'),/km/);
+ assert.equal(h.drawn.length,2); assert.match(h.run('routeMetrics({distance_km:1}).distance'),/km/);
  h.map.click({latlng:{lat:18.42,lng:77.42}}); assert.equal(h.removed.length,3);
 });
 for(const status of [400,422,500,503]) test(`HTTP ${status} does not draw`,async()=>{
  const h=harness({status,body:{error:'test error'}});
- await h.run('rotaIste({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
- assert.equal(h.drawn.length,0);assert.match(h.run('durum._div.textContent'),/Hata: test error/);
+ await h.run('requestRoute({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
+ assert.equal(h.drawn.length,0);assert.match(h.run('statusControl._div.textContent'),/Error: test error/);
 });
 test('network error is recoverable',async()=>{
- const h=harness(null,true);await h.run('rotaIste({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
- assert.equal(h.drawn.length,0);assert.match(h.run('durum._div.textContent'),/ulaşılamadı/);
+ const h=harness(null,true);await h.run('requestRoute({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
+ assert.equal(h.drawn.length,0);assert.match(h.run('statusControl._div.textContent'),/Could not reach/);
 });
 test('malformed successful geometry must not reach Leaflet',async()=>{
  const h=harness({status:200,body:{type:'Feature',geometry:{type:'LineString',coordinates:[[77.4,18.4]]}}});
- await h.run('rotaIste({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
+ await h.run('requestRoute({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
  assert.equal(h.drawn.length,0);
 });
 for (const value of [-1, NaN, Infinity, '1', true]) test(`invalid metric ${value} is not displayed as valid`,async()=>{
  const data=good();data.properties.distance_km=value;
  const h=harness({status:200,body:data});
- await h.run('rotaIste({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
+ await h.run('requestRoute({lat:18.4,lng:77.4},{lat:18.41,lng:77.41})');
  // Valid geometry can remain visible if the invalid metric is explicitly marked.
  h.context.metricValue=value;
- assert.equal(h.run('rotaMetrikleri({distance_km:metricValue}).mesafe'), 'geçersiz');
+ assert.equal(h.run('routeMetrics({distance_km:metricValue}).distance'), 'invalid');
 });

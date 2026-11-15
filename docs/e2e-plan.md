@@ -1,62 +1,39 @@
-# End-to-end verification and 21:00 dry-run plan
+# End-to-end acceptance runbook
 
-## Submission refresh — current root test run
+## Chrome update — 15 November 2026
 
-Current main snapshot: `e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583`.
-The integration branch was synchronized with main; main's current AI disclosure was preserved.
-Root `python -m pytest -v --tb=short`: **54 PASS, 0 FAIL, 7 SKIP** (0.76 s), without source-directory overrides. Six skips are pending requirements; one is the upstream real-DEM module skipped because this checkout has no DEM.
-Frontend `node --test tests/frontend-flow.cjs`: **12 PASS, 0 FAIL** (183.566 ms), pinned to the same revision without a source override.
-The real-DEM clean-install result below (12 PASS) belongs to earlier revision `b23c168`, not a new real-DEM execution of e880bcc.
-After two fetch checks, the announced `backend/tests/test_routing.py` and corner-cutting fix were not present in origin/main e880bcc. Their verification remains pending publication; the team should send the exact commit if it was pushed elsewhere.
-The remaining sections document the earlier clean-install rehearsal and its limitations. Chrome/phone acceptance remains pending.
+[Actual Chrome smoke test](chrome-smoke-2026-11-15.md): 3D loading, three candidate routes, Balanced selection, slope toggle/legend, Clear, invalid input and same-point recovery passed. Some remote tiles failed with an explicit fallback warning. **Legacy 2D startup FAILED on this Windows checkout**: CRLF conversion changes the Leaflet JS bytes, causing SRI rejection and `L is not defined`. This supersedes the generic browser-pending status below for the executed smoke scenarios; 2D retesting and unexecuted scenarios remain pending. Product files were not changed.
 
+Updated 15 November 2026. Product source baseline: main `008cf734fab40d5cad606170b37f6435d60775be`, with integration-only changes on `entegrasyon-test`. No backend/frontend product files were modified.
 
-Date: 14 November 2026; scheduled rehearsal: **21:00 Europe/Istanbul**.
-Reference revision already rehearsed locally: `b23c168fe72958c7e86e56ffdec61897bc6df19c`.
-The user confirmed that the actual demo computer is a different machine. Local preparation is complete at API/setup level; the actual-machine and phone walkthrough remains pending. This document is a runbook, not a claim that a future run has executed or been scheduled automatically.
+## Preparation already verified
 
-## Completed local preparation
+Clean rehearsal clone, independent Python environment, real CTX/MOLA hashes and automated tests are verified. Current integrated test run: 103 Python PASS, 12 flow PASS, 6 policy PASS. This is not the actual demo-machine/phone sign-off. The previously planned 14 November 21:00 session has no execution evidence here; this document does not claim it occurred.
 
-Clean clone into `C:/Users/Abdullah/Desktop/nasa/dry-run-2026-11-14`; separate virtual environment; README backend dependencies installed; USGS DEM downloaded and hash matched. The real-DEM backend suite passed all 12 tests. Snapshot tests passed 54 with 6 skips; frontend flow tests passed 12 with doubles. Backend/static servers started on ports 5000/8000. Chrome automation stopped at URL identification; no browser walkthrough completed.
+## Target-machine execution
 
-## Before 21:00 on the actual demo computer
+1. Demo operator clones current main into a clean folder and records the commit. Install Python/backend requirements following current README.
+2. Download both CTX and MOLA, verify README SHA-256 values, and keep them out of Git.
+3. Run root pytest plus the two Node suites; record all failures/skips. Different commits require new results.
+4. Start `python backend/app.py`; open http://127.0.0.1:5000/. If occupied, agree on MARS_PORT and record the actual URL.
+5. Follow the [frontend checklist](frontend-checklist.md) in Chrome; capture globe, candidate routes, layer controls, gaps, metrics and science popups.
+6. Perform the same acceptance on the actual physical phone using an agreed reachable URL. Loopback-only defaults do not establish LAN availability.
+7. Record errors, setup deviations, time spent, owner, fix and retest evidence. Frontend/backend/data owners fix their code; integration/test records and verifies.
 
-1. Confirm the operator, Chrome version, physical phone, network and presentation display.
-2. Clone main into a new empty folder; record the exact commit. If it differs from the tested revision, rerun tests rather than inheriting old PASS results.
-3. Verify Python 3.10+ and curl. On Windows, check that `python` is not an unusable Store alias. Create/activate an isolated environment and follow README's dependency commands.
-4. Download `data/jezero_dem.tif` using the README USGS URL. Expected SHA-256: `BA7F706EA1B5D63A562F28A7DCF7A7F3C79BCE7F048E6974B57E8A33C30D1BA2`. Keep the file out of Git.
-5. Run `python -m pytest backend/tests -v` from the repository root and record every outcome.
-6. Start backend as documented, then the static frontend on port 8000. Open `http://localhost:8000/frontend/index.html` in Chrome.
-7. Agree with frontend/backend owners how the phone reaches the app. A phone's localhost is not the demo PC. Current loopback binding and CORS do not permit arbitrary LAN hosting; resolve and test this before the run.
-8. Start a log of elapsed time, setup deviations, errors, owner and fix/retest result. Do not hide a step that required help.
+## Required scenarios
 
-## Acceptance scenarios
-
-The statuses below describe complete browser end-to-end execution, not component-test results. All remain PENDING until run on the target device.
-
-| ID | Scenario | Acceptance criterion | Current component evidence |
+| ID | Scenario | Component evidence | Remaining end-to-end evidence |
 | --- | --- | --- | --- |
-| E01 | Short real-terrain route | HTTP 200, valid geometry and matching rendered route | Real-DEM backend route PASS |
-| E02 | Longer in-range route | Correct endpoints/coverage; measured latency recorded | No independent long-route benchmark |
-| E03 | Detour around steep terrain | No above-20-degree/NoData cells; visible alignment | Synthetic obstacle test PASS; real overlay pending |
-| E04 | No traversable route | Clear error, no misleading straight line | Synthetic no-path and mocked frontend error PASS |
-| E05 | Outside DEM | 422 and usable map afterward | Real-DEM API rejection PASS |
-| E06 | Identical point/cell | Two positions, zero distance/time, usable display | Real-DEM/backend regression PASS |
-| E07 | Boundaries/NoData | No index overflow or invalid-cell traversal | Full independent sampling pending |
-| E08 | Backend unavailable/error | Understandable message and successful retry | Mock flow/JSON-500 component checks PASS |
-| E09 | Missing/corrupt DEM | Controlled startup failure and clear recovery | Pending explicit negative setup test |
-| E10 | Repeated requests | Only latest selection shown; old route removed | Reset logic PASS with doubles; race pending |
-| E11 | Tiles, science points, overlay | Visible, attributed, aligned and interactive | Assets/configuration present; browser check pending |
-| E12 | Metrics and route quality | Independent Mars/DEM checks, documented assumptions | Analytic Mars distance test PASS; route sampling pending |
-| E13 | Over-distance request | 422 returned promptly with clear message | Backend configured-limit test PASS |
-| E14 | Physical-phone walkthrough | Touch selection, reset, popups, layers and orientation work | Pending device and reachable serving strategy |
+| E01 | Jezero route and endpoints | Real-terrain API/numerical tests pass | Rendered line and cards |
+| E02 | Global and polar routes | Current real-MOLA tests pass | Globe interaction and camera |
+| E03 | Steep cells/NoData/corner cutting | Algorithm and real-route checks pass | Visual overlay agreement |
+| E04 | Missing/corrupt DEM | Integration JSON-503 tests pass | Operator recovery instructions |
+| E05 | Identical point | Zero distance/time tests pass | Stable viewport and summary |
+| E06 | Invalid request/no path | API and mocked flow checks pass | Usable browser error/retry |
+| E07 | Successive/overlapping requests | Reset logic covered with doubles | Race/timeout in actual browser |
+| E08 | Scientific layers and gaps | Raster/archive/reference tests pass | Units, legends, layout and live sources |
+| E09 | Physical phone | No executed device evidence | Touch, orientation, popups and layers |
 
-For E03/E04, choose terrain supported by actual DEM inspection. If unavailable, mark SKIP with the reason; do not substitute a synthetic result for real-terrain acceptance. The slope limit is 20 degrees, a prototype parameter, not a NASA safety standard.
+## Evidence and exit gate
 
-## Evidence and timing
-
-Record scenario ID, date/time, operator, device/browser, source commit, DEM hash, coordinates, request/response/status, elapsed time and screenshots. Establish snap tolerance from the DEM resolution before checking endpoints. Do not use the same backend statistic function as an independent reference. Route-performance and weighted-A* bound claims need separate benchmark/reference-path evidence; suite duration is not route latency.
-
-## Completion and handoff
-
-Integration/test owns result collection and retesting; backend/frontend/data owners fix their respective implementation issues. Demo operator/phone operator performs steps that require the actual hardware. Final sign-off requires evidence from Chrome and a physical phone, or an explicit documented device limitation agreed by the team. Update test-report.md, readiness-report.md and frontend-checklist.md after the run. Do not mark this stage complete solely because component tests passed.
+Record date/time, operator, browser/device, exact source commit, DEM hashes, route coordinates, request/status and screenshots. Establish resolution-aware tolerance before comparing points. Suite duration is not a route benchmark. Mark a check blocked/skipped when evidence is unavailable; never turn it into PASS because a related unit test passed. Final acceptance requires the team's documented decision about all remaining hardware/visual gates.
