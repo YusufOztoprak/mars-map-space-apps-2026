@@ -1,0 +1,677 @@
+{
+  "checked": "2026-11-15T06:55:54.825713+00:00",
+  "base_url": "http://127.0.0.1:5051",
+  "checks": [
+    {
+      "name": "GET /",
+      "status": "passed",
+      "seconds": 0.045,
+      "details": {
+        "bytes": 4611,
+        "url": "http://127.0.0.1:5051/frontend/index.html"
+      }
+    },
+    {
+      "name": "GET /frontend/explorer.js",
+      "status": "passed",
+      "seconds": 0.004,
+      "details": {
+        "bytes": 49628,
+        "url": "http://127.0.0.1:5051/frontend/explorer.js"
+      }
+    },
+    {
+      "name": "GET /frontend/explorer.css",
+      "status": "passed",
+      "seconds": 0.003,
+      "details": {
+        "bytes": 5873,
+        "url": "http://127.0.0.1:5051/frontend/explorer.css"
+      }
+    },
+    {
+      "name": "GET /frontend/vendor/cesium/Cesium.js",
+      "status": "passed",
+      "seconds": 0.052,
+      "details": {
+        "bytes": 5486118,
+        "url": "http://127.0.0.1:5051/frontend/vendor/cesium/Cesium.js"
+      }
+    },
+    {
+      "name": "GET /data/science_points.json",
+      "status": "passed",
+      "seconds": 0.005,
+      "details": {
+        "bytes": 6947,
+        "url": "http://127.0.0.1:5051/data/science_points.json"
+      }
+    },
+    {
+      "name": "Scientific metadata and actual DEM legend extrema",
+      "status": "passed",
+      "seconds": 0.029,
+      "details": {
+        "elevation_range_m": {
+          "max": 21171.0,
+          "min": -8177.0,
+          "scope": "Loaded MOLA grid"
+        },
+        "products": 77,
+        "excluded": 4
+      }
+    },
+    {
+      "name": "Raster height",
+      "status": "passed",
+      "seconds": 0.081,
+      "details": {
+        "mode": "RGBA",
+        "extrema": [
+          [
+            33,
+            167
+          ],
+          [
+            74,
+            174
+          ],
+          [
+            111,
+            153
+          ],
+          [
+            255,
+            255
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Raster slope",
+      "status": "passed",
+      "seconds": 0.052,
+      "details": {
+        "mode": "RGBA",
+        "extrema": [
+          [
+            35,
+            246
+          ],
+          [
+            23,
+            200
+          ],
+          [
+            54,
+            135
+          ],
+          [
+            255,
+            255
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Raster roughness",
+      "status": "passed",
+      "seconds": 0.028,
+      "details": {
+        "mode": "RGBA",
+        "extrema": [
+          [
+            25,
+            241
+          ],
+          [
+            54,
+            206
+          ],
+          [
+            80,
+            186
+          ],
+          [
+            255,
+            255
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Raster relief",
+      "status": "passed",
+      "seconds": 0.065,
+      "details": {
+        "mode": "RGBA",
+        "extrema": [
+          [
+            27,
+            144
+          ],
+          [
+            64,
+            151
+          ],
+          [
+            96,
+            139
+          ],
+          [
+            255,
+            255
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Raster coverage",
+      "status": "passed",
+      "seconds": 0.012,
+      "details": {
+        "mode": "RGBA",
+        "extrema": [
+          [
+            0,
+            47
+          ],
+          [
+            0,
+            216
+          ],
+          [
+            0,
+            197
+          ],
+          [
+            0,
+            180
+          ]
+        ]
+      }
+    },
+    {
+      "name": "Rover perseverance",
+      "status": "passed",
+      "seconds": 0.041,
+      "details": {
+        "segments": 559,
+        "archive_km": 46.07
+      }
+    },
+    {
+      "name": "Rover curiosity",
+      "status": "passed",
+      "seconds": 0.058,
+      "details": {
+        "segments": 1321,
+        "archive_km": 38.31
+      }
+    },
+    {
+      "name": "Rover spirit",
+      "status": "passed",
+      "seconds": 0.101,
+      "details": {
+        "segments": 8804,
+        "archive_km": 7.09
+      }
+    },
+    {
+      "name": "Rover opportunity",
+      "status": "passed",
+      "seconds": 0.166,
+      "details": {
+        "segments": 21104,
+        "archive_km": 45.11
+      }
+    },
+    {
+      "name": "Route Jezero CTX",
+      "status": "passed",
+      "seconds": 0.068,
+      "details": {
+        "source": {
+          "id": "ctx",
+          "name": "MRO / CTX · USGS Jezero",
+          "resolution_m": 20,
+          "scope": "Jezero",
+          "url": "https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_ctx_dem_mosaic"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 1.656,
+            "max_slope_deg": 16.1,
+            "mean_slope_deg": 4.6,
+            "mean_roughness_m": 0.12,
+            "estimated_time_hours": 1.22
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 1.656,
+            "max_slope_deg": 11.7,
+            "mean_slope_deg": 3.9,
+            "mean_roughness_m": 0.12,
+            "estimated_time_hours": 1.15
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 1.691,
+            "max_slope_deg": 10.3,
+            "mean_slope_deg": 3.3,
+            "mean_roughness_m": 0.1,
+            "estimated_time_hours": 1.13
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route HiRISE local",
+      "status": "passed",
+      "seconds": 0.026,
+      "details": {
+        "source": {
+          "id": "hirise",
+          "name": "MRO / HiRISE · Jezero stereo DTM",
+          "resolution_m": 1.02,
+          "scope": "Jezero · HiRISE",
+          "url": "https://hirise.lpl.arizona.edu/dtm/PSP_002387_1985"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 0.034,
+            "max_slope_deg": 8.5,
+            "mean_slope_deg": 3.0,
+            "mean_roughness_m": 0.01,
+            "estimated_time_hours": 0.02
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 0.034,
+            "max_slope_deg": 8.5,
+            "mean_slope_deg": 2.9,
+            "mean_roughness_m": 0.01,
+            "estimated_time_hours": 0.02
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 0.035,
+            "max_slope_deg": 8.5,
+            "mean_slope_deg": 2.6,
+            "mean_roughness_m": 0.01,
+            "estimated_time_hours": 0.02
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Gale",
+      "status": "passed",
+      "seconds": 0.012,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 3705,
+          "sampling_stride": 1,
+          "scope": "Global Mars",
+          "search_cells": 2392,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 30.121,
+            "max_slope_deg": 15.1,
+            "mean_slope_deg": 11.5,
+            "mean_roughness_m": 161.65,
+            "estimated_time_hours": 36.43
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 33.196,
+            "max_slope_deg": 14.6,
+            "mean_slope_deg": 9.6,
+            "mean_roughness_m": 145.65,
+            "estimated_time_hours": 35.2
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 45.856,
+            "max_slope_deg": 14.9,
+            "mean_slope_deg": 6.7,
+            "mean_roughness_m": 71.71,
+            "estimated_time_hours": 38.6
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Olympus",
+      "status": "passed",
+      "seconds": 0.036,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 3705,
+          "sampling_stride": 1,
+          "scope": "Global Mars",
+          "search_cells": 3721,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 86.802,
+            "max_slope_deg": 18.2,
+            "mean_slope_deg": 3.3,
+            "mean_roughness_m": 53.67,
+            "estimated_time_hours": 60.85
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 88.927,
+            "max_slope_deg": 17.9,
+            "mean_slope_deg": 3.3,
+            "mean_roughness_m": 65.46,
+            "estimated_time_hours": 60.74
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 103.599,
+            "max_slope_deg": 1.9,
+            "mean_slope_deg": 1.2,
+            "mean_roughness_m": 17.45,
+            "estimated_time_hours": 60.27
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Valles Marineris",
+      "status": "passed",
+      "seconds": 0.07,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 3705,
+          "sampling_stride": 1,
+          "scope": "Global Mars",
+          "search_cells": 4697,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 145.763,
+            "max_slope_deg": 18.3,
+            "mean_slope_deg": 6.0,
+            "mean_roughness_m": 97.33,
+            "estimated_time_hours": 118.37
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 145.865,
+            "max_slope_deg": 6.8,
+            "mean_slope_deg": 3.3,
+            "mean_roughness_m": 52.3,
+            "estimated_time_hours": 97.25
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 145.867,
+            "max_slope_deg": 6.8,
+            "mean_slope_deg": 3.3,
+            "mean_roughness_m": 53.79,
+            "estimated_time_hours": 97.13
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Sparse regional DEM",
+      "status": "passed",
+      "seconds": 0.086,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 3705,
+          "sampling_stride": 1,
+          "scope": "Global Mars",
+          "search_cells": 7161,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 197.259,
+            "max_slope_deg": 10.6,
+            "mean_slope_deg": 2.4,
+            "mean_roughness_m": 55.9,
+            "estimated_time_hours": 127.6
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 197.781,
+            "max_slope_deg": 6.8,
+            "mean_slope_deg": 1.6,
+            "mean_roughness_m": 25.76,
+            "estimated_time_hours": 117.8
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 197.803,
+            "max_slope_deg": 6.8,
+            "mean_slope_deg": 1.6,
+            "mean_roughness_m": 23.98,
+            "estimated_time_hours": 117.67
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route User route over 1200 km",
+      "status": "passed",
+      "seconds": 0.073,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 7409,
+          "sampling_stride": 2,
+          "scope": "Global Mars",
+          "search_cells": 22946,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 1322.378,
+            "max_slope_deg": 9.4,
+            "mean_slope_deg": 1.2,
+            "mean_roughness_m": 35.02,
+            "estimated_time_hours": 775.59
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 1322.793,
+            "max_slope_deg": 8.8,
+            "mean_slope_deg": 1.3,
+            "mean_roughness_m": 29.67,
+            "estimated_time_hours": 777.01
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 1346.962,
+            "max_slope_deg": 8.8,
+            "mean_slope_deg": 0.9,
+            "mean_roughness_m": 24.17,
+            "estimated_time_hours": 772.08
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Planetary",
+      "status": "passed",
+      "seconds": 2.794,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 25933,
+          "sampling_stride": 7,
+          "scope": "Global Mars",
+          "search_cells": 75050,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 10237.917,
+            "max_slope_deg": 13.4,
+            "mean_slope_deg": 0.7,
+            "mean_roughness_m": 17.86,
+            "estimated_time_hours": 5815.42
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 10243.756,
+            "max_slope_deg": 14.7,
+            "mean_slope_deg": 0.6,
+            "mean_roughness_m": 14.91,
+            "estimated_time_hours": 5770.12
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 10269.693,
+            "max_slope_deg": 10.9,
+            "mean_slope_deg": 0.6,
+            "mean_roughness_m": 14.2,
+            "estimated_time_hours": 5775.93
+          }
+        ]
+      }
+    },
+    {
+      "name": "Route Polar",
+      "status": "passed",
+      "seconds": 0.476,
+      "details": {
+        "source": {
+          "id": "mola",
+          "name": "MGS / MOLA MEGDR · 16 px/°",
+          "resolution_m": 3705,
+          "routing_step_m": 7409,
+          "sampling_stride": 2,
+          "scope": "Global Mars",
+          "search_cells": 21672,
+          "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+        },
+        "routes": [
+          {
+            "profiles": [
+              "shortest"
+            ],
+            "distance_km": 150.166,
+            "max_slope_deg": 15.5,
+            "mean_slope_deg": 2.4,
+            "mean_roughness_m": 2.75,
+            "estimated_time_hours": 98.92
+          },
+          {
+            "profiles": [
+              "balanced"
+            ],
+            "distance_km": 151.338,
+            "max_slope_deg": 7.3,
+            "mean_slope_deg": 1.3,
+            "mean_roughness_m": 1.13,
+            "estimated_time_hours": 88.64
+          },
+          {
+            "profiles": [
+              "terrain"
+            ],
+            "distance_km": 151.095,
+            "max_slope_deg": 6.8,
+            "mean_slope_deg": 1.3,
+            "mean_roughness_m": 1.09,
+            "estimated_time_hours": 88.34
+          }
+        ]
+      }
+    },
+    {
+      "name": "Real HTTP validation errors and CORS",
+      "status": "passed",
+      "seconds": 0.051,
+      "details": {
+        "invalid_requests": "400",
+        "allowed_origin": "http://localhost:8000"
+      }
+    }
+  ],
+  "passed": 25,
+  "failed": 0
+}

@@ -3,7 +3,7 @@ import heapq
 import numpy as np
 import math
 
-SAFETY_THRESHOLD_DEG = 20.0  # slopes steeper than this are impassable for an EVA astronaut
+SAFETY_THRESHOLD_DEG = 20.0  # prototype exclusion threshold, not a validated astronaut limit
 BASE_SPEED_KMH = 2.2         # estimated EVA walking speed (honesty note: not an official NASA constant)
 
 
@@ -25,7 +25,8 @@ def build_cost_grid(slope_degrees, cellsize):
     return cost
 
 
-def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2, max_expansions=None, horizontal_scale=1.0):
+def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2, max_expansions=None, horizontal_scale=1.0,
+          edge_distance=None, heuristic=None):
     """Weighted grid A* with a closed set.
 
     h_scale: minimum per-cell cost (seconds), so the Euclidean heuristic uses
@@ -73,12 +74,14 @@ def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2, max_expansions=None, 
             # Both side cells must be passable for a diagonal move.
             if dr and dc and (cost_grid[r, nc] == np.inf or cost_grid[nr, c] == np.inf):
                 continue
-            tentative_g = g_current + cell_cost * step
+            step_distance=edge_distance(r,c,nr,nc) if edge_distance else step
+            tentative_g = g_current + cell_cost * step_distance
             neighbor = (nr, nc)
             if tentative_g < g_score.get(neighbor, np.inf):
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
-                f_score = tentative_g + h_factor * math.hypot(nr - goal_r, (nc - goal_c) * horizontal_scale)
+                estimate=heuristic(nr,nc) if heuristic else math.hypot(nr-goal_r,(nc-goal_c)*horizontal_scale)
+                f_score = tentative_g + h_factor * estimate
                 heapq.heappush(open_set, (f_score, tentative_g, neighbor))
 
     return None

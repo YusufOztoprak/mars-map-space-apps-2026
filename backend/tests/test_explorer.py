@@ -94,3 +94,45 @@ def test_explorer_reports_missing_terrain_without_failing(monkeypatch, tmp_path)
         route = client.post("/api/explorer/routes",json={"start":{"lat":18.45,"lon":77.41},
                                                         "end":{"lat":18.46,"lon":77.42}})
         assert route.status_code == 422
+
+
+@pytest.mark.parametrize('start,end',[
+    ((67.149373,27.259329),(82.878283,10.875713)),
+    ((-140,-35),(30,45)),
+    ((10,89),(120,88.5)),
+])
+def test_distance_and_polar_limits_replaced_by_bounded_sampling(start,end):
+    with app.test_client() as client:
+        if not client.get('/api/explorer/meta').json['global_dem']:
+            pytest.skip('Real MOLA is required')
+        response=client.post('/api/explorer/routes',json={
+            'start':dict(zip(('lon','lat'),start)), 'end':dict(zip(('lon','lat'),end)),
+            'coverage':['radiation']})
+        assert response.status_code==200
+        result=response.json
+        assert result['source']['search_cells']<=80_000
+        assert result['source']['routing_step_m']>=result['source']['resolution_m']
+        for feature in result['features']:
+            assert feature['properties']['max_slope_deg']<=20
+            assert feature['properties']['coverage']['radiation']['status']=='missing'
+            assert np.isfinite(np.asarray(feature['geometry']['coordinates'])).all()
+
+
+def test_coarse_search_checks_barrier_between_native_nodes(monkeypatch):
+    import explorer
+    source={'id':'mola','scope':'Global Mars','resolution_m':1,'sampling_stride':3}
+    class Terrain:
+        def sample_global(self,key,lon,lat):
+            values=np.zeros(np.shape(lon),dtype=float)
+            if key=='slope':
+                values[(np.isclose(lon,1)) & (np.isclose(lat,0))]=30
+            return values
+    grids={k:np.zeros((5,5)) for k in ('height','slope','roughness')}
+    monkeypatch.setattr(explorer,'route_window',lambda *args:
+        (grids,(0,0),(0,2),lambda r,c:(np.asarray(c)*3,np.asarray(r)*3),3,source))
+    routes,_=explorer.candidate_routes(Terrain(),(0,0),(6,0),{'slope'},{'height'})
+    assert routes
+    for route in routes:
+        coordinates=route['geometry']['coordinates']
+        assert [1.0,0.0] not in coordinates
+        assert route['properties']['max_slope_deg']==0

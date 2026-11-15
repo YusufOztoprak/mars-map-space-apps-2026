@@ -22,8 +22,8 @@ CTX = "https://astrogeology.usgs.gov/search/map/mars_2020_science_investigation_
 MOLA = "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
 LOCAL_GEOLOGY = "https://pubs.usgs.gov/publication/sim3464"
 GLOBAL_GEOLOGY = "https://pubs.usgs.gov/publication/sim3292"
-CTX_SOURCE = {"name": "MRO / CTX · USGS Jezero", "url": CTX, "resolution_m": 20, "scope": "Jezero"}
-HIRISE_SOURCE = {"name":"MRO / HiRISE · Jezero stereo DTM",
+CTX_SOURCE = {"id":"ctx", "name": "MRO / CTX · USGS Jezero", "url": CTX, "resolution_m": 20, "scope": "Jezero"}
+HIRISE_SOURCE = {"id":"hirise", "name":"MRO / HiRISE · Jezero stereo DTM",
                  "url":"https://hirise.lpl.arizona.edu/dtm/PSP_002387_1985",
                  "resolution_m":1.02, "scope":"Jezero · HiRISE"}
 TERRAIN_FACTORS = {"slope", "roughness"}
@@ -86,7 +86,7 @@ class Terrain:
 
     @property
     def global_source(self):
-        return {"name": f"MGS / MOLA MEGDR · {self.density} px/°", "url": MOLA,
+        return {"id":"mola", "name": f"MGS / MOLA MEGDR · {self.density} px/°", "url": MOLA,
                 "resolution_m": round(RADIUS * math.pi / 180 / self.density), "scope": "Global Mars"}
 
     @staticmethod
@@ -127,12 +127,19 @@ class Terrain:
         return np.degrees(np.arctan(np.hypot(dx, (south - north) / (2 * spacing))))
 
     def sample(self, key, lon, lat, level):
-        values = self.sample_global(key, lon, lat, density=4 if level < 4 and 4 in self.globals else self.density)
+        values = self.sample_global(key, lon, lat)
         for min_level, product in ((6,self.ctx),(11,self.hirise)):
-            if product and level >= min_level:
+            if product:
                 local = self.sample_local(product, key, lon, lat)
                 values = np.where(np.isfinite(local),local,values)
         return values
+
+    def sample_model(self, key, lon, lat, level, model="auto"):
+        if model == "auto":
+            return self.sample(key,lon,lat,level)
+        if model == "mola":
+            return self.sample_global(key,lon,lat)
+        return self.sample_local(self.ctx if model == "ctx" else self.hirise,key,lon,lat)
 
     @staticmethod
     def bounds(product):
@@ -244,7 +251,7 @@ def route_window(terrain, start, end):
         er, ec = map(int, terrain.indexes(product, *end))
         separation = float(arc_km(lx, ly)[0])
         if separation > 30:
-            raise ValueError("Jezero route endpoints must be within 30 km of each other.")
+            continue  # Long journeys use the global grid instead of rejecting distance.
         margin = min(270, max(75, int(math.hypot(er-sr, ec-sc) * .22)))
         r0, c0 = max(0, min(sr, er)-margin), max(0, min(sc, ec)-margin)
         r1, c1 = min(grid.shape[0], max(sr, er)+margin+1), min(grid.shape[1], max(sc, ec)+margin+1)
@@ -258,25 +265,29 @@ def route_window(terrain, start, end):
                 (sr-r0, sc-c0), (er-r0, ec-c0), positions, product["cellsize"], source)
     if not terrain.density:
         raise ValueError("No common elevation grid covers both endpoints.")
-    if max(abs(start[1]), abs(end[1])) > 87 or arc_km(lx, ly)[0] > 1200:
-        raise ValueError("MOLA regional planning supports latitudes within ±87° and endpoints up to 1,200 km apart.")
     density = terrain.density
     width = 360*density
     rs, cs = terrain.global_indexes(lx, ly, density)
     cs = [int(cs[0]), int(cs[0] + (cs[1]-cs[0]+width//2) % width - width//2)]
     r0, c0 = max(0, int(min(rs))-22), min(cs)-22
     r1, c1 = min(180*density, int(max(rs))+23), max(cs)+23
-    if (r1-r0)*(c1-c0) > 800_000:
-        raise ValueError("The MOLA search area is too large. Choose closer waypoints.")
+    stride=max(1,math.ceil(math.sqrt((r1-r0)*(c1-c0)/80_000)))
+    while math.ceil((r1-r0)/stride)*math.ceil((c1-c0)/stride)>80_000:
+        stride+=1
+    shape=(math.ceil((r1-r0)/stride),math.ceil((c1-c0)/stride))
 
     def positions(rows, cols):
-        return wrap((cols+c0+.5)/density), 90-(rows+r0+.5)/density
+        return wrap((cols*stride+c0+.5)/density), 90-(rows*stride+r0+.5)/density
 
-    r, c = np.mgrid[:r1-r0, :c1-c0]
+    r, c = np.mgrid[:shape[0], :shape[1]]
     lon, lat = positions(r, c)
     grids = {k: terrain.sample_global(k, lon, lat) for k in ("height", "slope", "roughness")}
-    return (grids, (int(rs[0])-r0, cs[0]-c0), (int(rs[1])-r0, cs[1]-c0), positions,
-            RADIUS*math.pi/(180*density), terrain.global_source)
+    snapped=lambda row,col:(min(shape[0]-1,round((int(row)-r0)/stride)),
+                            min(shape[1]-1,round((col-c0)/stride)))
+    step=RADIUS*math.pi/(180*density)*stride
+    source={**terrain.global_source,"routing_step_m":round(step),"sampling_stride":stride,
+            "search_cells":shape[0]*shape[1]}
+    return (grids,snapped(rs[0],cs[0]),snapped(rs[1],cs[1]),positions,step,source)
 
 
 def candidate_routes(terrain, start, end, factors, coverage_factors):
@@ -284,17 +295,52 @@ def candidate_routes(terrain, start, end, factors, coverage_factors):
     heights, slopes, rough = (grids[key] for key in ("height", "slope", "roughness"))
     blocked = ~np.isfinite(heights) | ~np.isfinite(slopes) | (slopes > SLOPE_LIMIT)
     rough_penalty = np.nan_to_num(rough / spacing, nan=0)
-    base_time = build_cost_grid(slopes, spacing)
     profiles = {"shortest": (0, 0), "balanced": (1.8, 1.4), "terrain": (7, 5)}
     routes, same_paths = [], {}
+    edge_distance=heuristic=None
+    if source["scope"]=="Global Mars":
+        # Longitude distances vary by row, especially on long/polar routes.
+        # A single mean-latitude scale can choose the wrong distance-priority path.
+        longitudes=np.radians(positions(np.zeros(heights.shape[1]),np.arange(heights.shape[1]))[0])
+        latitudes=np.radians(positions(np.arange(heights.shape[0]),np.zeros(heights.shape[0]))[1])
+        cosines=np.cos(latitudes)
+        def edge_distance(r,c,nr,nc):
+            a=math.sin((latitudes[nr]-latitudes[r])/2)**2+cosines[r]*cosines[nr]*math.sin((longitudes[nc]-longitudes[c])/2)**2
+            return 2*RADIUS*math.asin(math.sqrt(min(1,max(0,a))))/spacing
+        heuristic=lambda r,c:edge_distance(r,c,*e)
     for name, (slope_weight, rough_weight) in profiles.items():
         penalty = 1.0 + (slope_weight * (slopes / SLOPE_LIMIT)**2 if "slope" in factors else 0)
         if "roughness" in factors:
             penalty = penalty + rough_weight * rough_penalty
         grid = np.where(blocked, np.inf, np.ones_like(slopes) * penalty)
         cos_lat = max(.01, math.cos(math.radians((start[1]+end[1])/2))) if source != CTX_SOURCE else 1.0
-        path = astar(grid, s, e, h_scale=1, weight=1.0 if name == "shortest" else 1.07,
-                     max_expansions=235_000, horizontal_scale=cos_lat)
+        stride=source.get("sampling_stride",1)
+        # Search sparsely on long journeys, then validate every intervening native
+        # MOLA cell. Reject and reroute coarse edges that cross steep/nodata cells.
+        for attempt in range(8):
+            path = astar(grid, s, e, h_scale=1, weight=1.0 if name == "shortest" else 1.07,
+                         max_expansions=grid.size+1 if source["scope"]=="Global Mars" else 235_000,
+                         horizontal_scale=cos_lat,edge_distance=edge_distance,heuristic=heuristic)
+            if not path or stride==1 or len(path)==1:
+                break
+            vertices=np.asarray(path,dtype=float)
+            expanded=np.concatenate([a+(b-a)*np.arange(stride)[:,None]/stride
+                                     for a,b in zip(vertices[:-1],vertices[1:])]+[vertices[-1:]])
+            test_lon,test_lat=positions(expanded[:,0],expanded[:,1])
+            checks={k:terrain.sample_global(k,test_lon,test_lat) for k in ("height","slope","roughness")}
+            bad=~np.isfinite(checks["height"]) | ~np.isfinite(checks["slope"]) | (checks["slope"]>SLOPE_LIMIT)
+            # Native diagonal moves must not cut across blocked adjacent cells.
+            for dx,dy in ((1,0),(0,1)):
+                side_lon,side_lat=positions(expanded[:-1,0]+dy*np.diff(expanded[:,0]),
+                                            expanded[:-1,1]+dx*np.diff(expanded[:,1]))
+                side=terrain.sample_global("slope",side_lon,side_lat)
+                bad[1:] |= ~np.isfinite(side) | (side>SLOPE_LIMIT)
+            if not bad.any():
+                break
+            for index in np.unique(np.minimum(np.flatnonzero(bad)//stride,len(path)-2)):
+                target=path[index+1] if path[index+1]!=e else path[index]
+                grid[target]=np.inf
+            path=None
         if not path:
             continue
         key = tuple(path)
@@ -304,12 +350,35 @@ def candidate_routes(terrain, start, end, factors, coverage_factors):
         if len(path) == 1:
             path = [path[0], path[0]]
         rows, cols = np.asarray(path).T
+        if stride>1 and len(set(path))>1:
+            vertices=np.asarray(path,dtype=float)
+            expanded=np.concatenate([a+(b-a)*np.arange(stride)[:,None]/stride
+                                     for a,b in zip(vertices[:-1],vertices[1:])]+[vertices[-1:]])
+            rows,cols=expanded.T
         lon, lat = positions(rows, cols)
         lon, lat = np.asarray(lon), np.asarray(lat)
-        values = {k: v[rows, cols] for k, v in grids.items()}
-        length = arc_km(lon, lat)
         start_snap = arc_km([start[0],lon[0]],[start[1],lat[0]])[0]
         end_snap = arc_km([end[0],lon[-1]],[end[1],lat[-1]])[0]
+        def connector(a,b):
+            delta=wrap(b[0]-a[0])
+            density=RADIUS*math.pi/180/source['resolution_m']
+            count=max(1,math.ceil(max(abs(delta),abs(b[1]-a[1]))*density*2))
+            fraction=np.linspace(0,1,count+1)
+            return np.column_stack((wrap(a[0]+fraction*delta),a[1]+fraction*(b[1]-a[1])))
+        if np.all(lon==lon[0]) and np.all(lat==lat[0]):
+            connected=connector(start,end)
+        else:
+            connected=np.concatenate((connector(start,(lon[0],lat[0]))[:-1],
+                np.column_stack((lon,lat)),connector((lon[-1],lat[-1]),end)[1:]))
+        lon,lat=connected.T
+        if source['id']=='mola':
+            values={k:terrain.sample_global(k,lon,lat) for k in grids}
+        else:
+            product=terrain.hirise if source['id']=='hirise' else terrain.ctx
+            values={k:terrain.sample_local(product,k,lon,lat) for k in grids}
+        if not np.isfinite(values['height']).all() or not np.isfinite(values['slope']).all() or (values['slope']>SLOPE_LIMIT).any():
+            continue
+        length = arc_km(lon, lat)
         height_steps = np.diff(values["height"])
         steepness = values["slope"]
         steep = np.flatnonzero(steepness >= CAUTION_SLOPE)
@@ -325,7 +394,7 @@ def candidate_routes(terrain, start, end, factors, coverage_factors):
                       "start_snap_m":round(float(start_snap)*1000), "end_snap_m":round(float(end_snap)*1000),
                       "ascent_m":round(float(np.maximum(height_steps,0).sum()), 1),
                       "descent_m":round(float(np.maximum(-height_steps,0).sum()), 1),
-                      "estimated_time_hours":round(float((base_time[rows[1:], cols[1:]] / spacing * length * 1000).sum())/3600, 2),
+                      "estimated_time_hours":round(float((build_cost_grid(values["slope"][1:],1) * length * 1000).sum())/3600, 2),
                       "max_slope_deg":round(float(steepness.max()), 1),
                       "mean_slope_deg":round(float(steepness.mean()), 1),
                       "mean_roughness_m":round(float(values["roughness"][np.isfinite(values["roughness"])].mean()), 2)
@@ -339,6 +408,15 @@ def candidate_routes(terrain, start, end, factors, coverage_factors):
 
 def register_explorer(app, ctx):
     terrain = Terrain(ctx)
+    limits=[]
+    if terrain.density:
+        values=terrain.globals[terrain.density]
+        limits=[float(values.min()),float(values.max())]
+    else:
+        for product in (terrain.ctx,terrain.hirise):
+            if product and product.get('height') is not None and np.isfinite(product['height']).any():
+                limits.extend((float(np.nanmin(product['height'])),float(np.nanmax(product['height']))))
+        limits=[min(limits),max(limits)] if limits else []
     schemes = {
         "height": ([-9000, -4500, 0, 4500, 10000, 22000],
                    [(45,49,123), (33,112,153), (59,154,136), (226,185,98), (190,87,51), (253,242,220)]),
@@ -346,6 +424,9 @@ def register_explorer(app, ctx):
                                              (247,144,54), (233,75,59), (144,23,55)]),
         "roughness": ([0, .5, 2, 10, 200, 1500], [(25,54,81), (62,125,167), (91,205,186),
                                                    (231,206,118), (233,118,80), (253,230,200)])}
+    if limits and limits[0]<limits[1]:
+        levels=[limits[0],-4500,0,4500,10000,limits[1]] if terrain.density else np.linspace(*limits,6).tolist()
+        schemes['height']=(levels,schemes['height'][1])
 
     @app.get("/")
     def explorer_home():
@@ -372,7 +453,14 @@ def register_explorer(app, ctx):
                         "hirise_bounds":terrain.bounds(terrain.hirise), "hirise":HIRISE_SOURCE if terrain.hirise else None,
                         "global_dem": terrain.global_source if terrain.density else None,
                         "observations":json_data("observations.json") or [],
-                        "dust_available":(DATA / "dust-my34-sol400.png").is_file(),
+                        "imagery":json_data("imagery.json") or {"layers":[]},
+                        "legends":{**{key:{"values":values,"colors":["#%02x%02x%02x" % tuple(c) for c in colors]}
+                                   for key,(values,colors) in schemes.items()},
+                                   **({"dust":json_data("dust-my34-sol400.json")["legend"]}
+                                      if (json_data("dust-my34-sol400.json") or {}).get("legend") else {})},
+                        "elevation_reference":"Meters relative to the Martian areoid; MOLA GMM3 degree/order 50 reference.",
+                        "elevation_range_m":{"min":limits[0],"max":limits[1],"scope":"Loaded MOLA grid" if terrain.density else "Loaded local DEMs"} if limits else None,
+                        "dust_available":(DATA / "dust-my34-sol400.png").is_file() and bool(json_data("dust-my34-sol400.json")),
                         "geology":{i: (DATA / f"{i}-geology.geojson").is_file() for i in ("global","jezero")},
                         "slope_limit":SLOPE_LIMIT, "caution_slope":CAUTION_SLOPE})
 
@@ -383,6 +471,9 @@ def register_explorer(app, ctx):
         except (KeyError, ValueError):
             return jsonify({"error":"Enter valid latitude and longitude."}), 400
         result = {}
+        model=request.args.get("model","auto")
+        if model not in {"auto","mola","ctx","hirise"}:
+            return jsonify({"error":"Unknown terrain model."}),400
         for key in ("height", "slope", "roughness"):
             lon_a, lat_a = np.array([lon]), np.array([lat])
             value = float(terrain.sample_local(terrain.hirise, key, lon_a, lat_a)[0])
@@ -393,9 +484,19 @@ def register_explorer(app, ctx):
             if not math.isfinite(value):
                 value = float(terrain.sample_global(key, lon_a, lat_a)[0])
                 source = terrain.global_source if terrain.density else None
+            if model != "auto":
+                value=float(terrain.sample_model(key,lon_a,lat_a,17,model)[0])
+                source={"ctx":CTX_SOURCE,"hirise":HIRISE_SOURCE,"mola":terrain.global_source if terrain.density else None}[model]
             result[key] = {"value": round(value, 2), "source": source} if math.isfinite(value) else None
         return jsonify({"lon":lon, "lat":lat, "terrain":result, "geology":geology_at(lon, lat),
-                        "historical_dust":historical_dust(lon,lat)})
+                        "historical_dust":historical_dust(lon,lat),
+                        "coverage":{**{k:{"status":"available" if v else "missing","source":v["source"] if v else None}
+                                      for k,v in result.items()},
+                                    "geology":{"status":"available" if geology_at(lon,lat) else "missing"},
+                                    "radiation":{"status":"missing","detail":"No time-matched radiation measurement. Archived RAD data are local to Curiosity; missing is not zero dose."},
+                                    "temperature":{"status":"missing","detail":"No time-matched air temperature measurement."},
+                                    "thermal":{"status":"context_only","detail":"Colorized TES imagery has no calibrated numeric sampling in this app."},
+                                    "dust":{"status":"historical_context" if historical_dust(lon,lat) else "missing"}}})
 
     @app.post("/api/explorer/heights")
     def explorer_heights():
@@ -403,6 +504,10 @@ def register_explorer(app, ctx):
         points = request.get_json(silent=True)
         if not isinstance(points,list) or not 1 <= len(points) <= 100_000:
             return jsonify({"error":"Provide 1 to 100,000 coordinate pairs."}), 400
+        if not all(isinstance(p,list) and len(p)==2 and all(
+                isinstance(v,(int,float)) and not isinstance(v,bool) and math.isfinite(v) for v in p)
+                   for p in points):
+            return jsonify({"error":"Each point must contain two finite numeric coordinates."}),400
         try:
             lon, lat = np.asarray(points, dtype=float).T
             if not np.isfinite(lon).all() or not np.isfinite(lat).all() or np.any(np.abs(lat)>90):
@@ -420,7 +525,7 @@ def register_explorer(app, ctx):
         return np.meshgrid(360*(x+step)/nx-180, 90-180*(y+step)/ny)
 
     @lru_cache(maxsize=96)
-    def raster_tile(kind, z, x, y):
+    def raster_tile(kind, z, x, y, model):
         coords = tile_coords(z, x, y, 256)
         if coords is None:
             return None
@@ -432,9 +537,21 @@ def register_explorer(app, ctx):
             rgba[valid] = (47,216,197,180)
             rgba[fine] = (188,150,246,205)
         else:
-            values = terrain.sample(kind, lon, lat, z)
-            steps, colors = schemes[kind]
+            values = terrain.sample_model("height" if kind == "relief" else kind, lon, lat, z,model)
+            steps, colors = schemes["height" if kind == "relief" else kind]
             rgb = [np.interp(np.nan_to_num(values), steps, channel) for channel in zip(*colors)]
+            if kind == "relief":
+                # Sample a halo so neighboring tiles use identical edge derivatives.
+                step=(np.arange(-1,257)+.5)/256
+                hx,hy=np.meshgrid(360*(x+step)/2**(z+1)-180,90-180*(y+step)/2**z)
+                heights=terrain.sample_model("height",wrap(hx),hy,z,model)
+                dy,dx=np.gradient(heights)
+                spacing=RADIUS*math.pi/(2**z*256)
+                east=dx[1:-1,1:-1]/(spacing*np.maximum(.001,np.cos(np.radians(lat))))
+                north=-dy[1:-1,1:-1]/spacing
+                light=np.clip((.5*east-.5*north+math.sqrt(.5))/np.sqrt(1+east**2+north**2),0,1)
+                shade=np.nan_to_num(.55+.45*light,nan=1)
+                rgb=[channel*shade for channel in rgb]
             rgba = np.dstack((*rgb, np.isfinite(values)*255)).astype(np.uint8)
         out = io.BytesIO()
         Image.fromarray(rgba).save(out, format="PNG")
@@ -442,9 +559,12 @@ def register_explorer(app, ctx):
 
     @app.get("/api/explorer/raster/<kind>/<int:z>/<int:x>/<int:y>.png")
     def explorer_raster(kind, z, x, y):
-        if kind not in (*schemes, "coverage") or z > 17:
+        if kind not in (*schemes, "coverage", "relief") or z > 17:
             return ("", 404)
-        image = raster_tile(kind, z, x, y)
+        model=request.args.get("model","auto")
+        if model not in {"auto","mola","ctx","hirise"}:
+            return jsonify({"error":"Unknown terrain model."}),400
+        image = raster_tile(kind, z, x, y,model)
         return send_file(io.BytesIO(image), mimetype="image/png", max_age=3600) if image else ("", 404)
 
     @lru_cache(maxsize=192)
@@ -482,8 +602,8 @@ def register_explorer(app, ctx):
         if not entries:
             return jsonify({"error":"No candidate route was found within the search area and slope limit.", "source":source}), 422
         return jsonify({"type":"FeatureCollection", "features":entries, "source":source,
-                        "slope_limit":SLOPE_LIMIT, "search_limit":235_000,
+                        "slope_limit":SLOPE_LIMIT, "search_limit":source.get("search_cells",235_000),
                         "applied_factors": sorted(set(factors)),
-                        "note":("MOLA results are suitable for regional planning." if source["scope"] == "Global Mars"
+                        "note":(f"No distance cap. MOLA search step ≈ {source.get('routing_step_m',source['resolution_m'])/1000:.1f} km; native cells along the returned path are checked. Regional planning only." if source["scope"] == "Global Mars"
                                else "This route uses approximately 1 m HiRISE stereo elevation samples." if source == HIRISE_SOURCE
                                else "The 20 m CTX grid cannot resolve small obstacles.")})

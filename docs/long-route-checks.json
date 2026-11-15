@@ -1,0 +1,104 @@
+[
+  {
+    "name": "user-example",
+    "elapsed_s": 0.064,
+    "status": 200,
+    "separation_km": 1308.3673430850006,
+    "source": {
+      "id": "mola",
+      "name": "MGS / MOLA MEGDR \u00b7 16 px/\u00b0",
+      "resolution_m": 3705,
+      "routing_step_m": 7409,
+      "sampling_stride": 2,
+      "scope": "Global Mars",
+      "search_cells": 22946,
+      "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+    },
+    "error": null,
+    "routes": [
+      {
+        "distance_km": 1322.378,
+        "max_slope_deg": 9.4,
+        "points": 265
+      },
+      {
+        "distance_km": 1322.793,
+        "max_slope_deg": 8.8,
+        "points": 265
+      },
+      {
+        "distance_km": 1346.962,
+        "max_slope_deg": 8.8,
+        "points": 277
+      }
+    ]
+  },
+  {
+    "name": "planetary",
+    "elapsed_s": 2.059,
+    "status": 200,
+    "separation_km": 9924.00581566516,
+    "source": {
+      "id": "mola",
+      "name": "MGS / MOLA MEGDR \u00b7 16 px/\u00b0",
+      "resolution_m": 3705,
+      "routing_step_m": 25933,
+      "sampling_stride": 7,
+      "scope": "Global Mars",
+      "search_cells": 75050,
+      "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+    },
+    "error": null,
+    "routes": [
+      {
+        "distance_km": 10237.917,
+        "max_slope_deg": 13.4,
+        "points": 2730
+      },
+      {
+        "distance_km": 10243.756,
+        "max_slope_deg": 14.7,
+        "points": 2744
+      },
+      {
+        "distance_km": 10269.693,
+        "max_slope_deg": 10.9,
+        "points": 2758
+      }
+    ]
+  },
+  {
+    "name": "polar",
+    "elapsed_s": 0.368,
+    "status": 200,
+    "separation_km": 122.5691057362202,
+    "source": {
+      "id": "mola",
+      "name": "MGS / MOLA MEGDR \u00b7 16 px/\u00b0",
+      "resolution_m": 3705,
+      "routing_step_m": 7409,
+      "sampling_stride": 2,
+      "scope": "Global Mars",
+      "search_cells": 21672,
+      "url": "https://pds-geosciences.wustl.edu/missions/mgs/megdr.html"
+    },
+    "error": null,
+    "routes": [
+      {
+        "distance_km": 150.166,
+        "max_slope_deg": 15.5,
+        "points": 1763
+      },
+      {
+        "distance_km": 151.338,
+        "max_slope_deg": 7.3,
+        "points": 1763
+      },
+      {
+        "distance_km": 151.095,
+        "max_slope_deg": 6.8,
+        "points": 1763
+      }
+    ]
+  }
+]

@@ -1,0 +1,175 @@
+{
+  "checked": "2026-11-15T06:59:41.146155+00:00",
+  "results": [
+    {
+      "id": "Gale_CTX_BlockAdj_dd",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/Gale_CTX_BlockAdj_dd/1.0.0//default/default028mm/12/2154/7218.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          41,
+          207
+        ],
+        [
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "CTX_beta01_uncontrolled_5m_Caltech",
+      "url": "https://astro.arcgis.com/arcgis/rest/services/OnMars/CTX/MapServer/tile/11/1077/3610",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        512,
+        512
+      ],
+      "mode": "L",
+      "extrema": [
+        114,
+        172
+      ]
+    },
+    {
+      "id": "olympus_mons.eq",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/olympus_mons.eq/1.0.0//default/default028mm/13/3276/2275.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          94,
+          168
+        ],
+        [
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0/1.0.0//default/default028mm/13/3255/11715.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          31,
+          252
+        ],
+        [
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0//default/default028mm/17/52073/187435.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          73,
+          207
+        ],
+        [
+          255,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "TES_Thermal_Inertia",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/TES_Thermal_Inertia/1.0.0//default/default028mm/0/0/0.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "RGBA",
+      "extrema": [
+        [
+          0,
+          255
+        ],
+        [
+          0,
+          255
+        ],
+        [
+          0,
+          255
+        ],
+        [
+          0,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018/1.0.0//default/default028mm/0/0/0.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          0,
+          211
+        ],
+        [
+          0,
+          255
+        ]
+      ]
+    },
+    {
+      "id": "THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018",
+      "url": "https://trek.nasa.gov/tiles/Mars/EQ/THEMIS_DayIR_ControlledMosaics_100m_v2_oct2018/1.0.0//default/default028mm/0/0/0.png",
+      "status": 200,
+      "cors": "*",
+      "size": [
+        256,
+        256
+      ],
+      "mode": "LA",
+      "extrema": [
+        [
+          0,
+          206
+        ],
+        [
+          0,
+          255
+        ]
+      ]
+    }
+  ]
+}

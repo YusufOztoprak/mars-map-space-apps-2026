@@ -40,6 +40,11 @@ OpenAI Codex assisted Abdullah Demirel with repository analysis, pytest infrastr
 
 ### Documentation and presentation — Yusuf Öztoprak and Yusuf Tunç
 The README, the integration guide (`docs/integration.md`), the submission text (`docs/submission.md`) and the demo script were drafted with Claude and then edited and fact-checked by the team. All numbers in them (route times, distances, test results) were measured on our running system. Presentation screenshots are captures of the running app, not AI-generated images. The English submission draft, slide outline and demo script were updated with OpenAI Codex. Record the slide authoring tool and any AI use when the final slide deck is prepared.
+### Mars Explorer layer audit
+Final audit on 2026-11-15 used Codex for geographic A* edge costs, exact endpoint connectors, request validation, real DEM min/max legends, publisher LOD metadata validation, bounded long-distance routing, and additional regression checks. The current run records 78 pytest passes with 27 explicitly skipped historical/placeholder cases, six frontend policy tests and 25 live HTTP checks. Independent GDAL projection and Cartesian great-circle references were used. These automated checks do not establish browser rendering or NASA judging approval; the final report records those remaining review gaps.
+
+OpenAI Codex assisted the subsequent Mars Explorer layer audit and implementation: official WMTS ResourceURL discovery, PDS RAD byte-pointer extraction and same-sol waypoint association, synchronized DEM rendering and route sources, numeric legends, and source documentation. Validation used 27 backend tests with the supplied real DEMs, live representative tile requests, and browser checks. No synthetic surface imagery or extrapolated radiation field was introduced. These changes are prepared on a separate local `veri-icerik` branch for team review.
+
 ## What was not AI-generated
 - All map imagery, elevation data and rover photos are NASA/USGS data products, credited in `data_sources.md`. We did not generate or alter any imagery with AI.
 - Science-point coordinates come from NASA's Perseverance waypoint data, not from AI output.

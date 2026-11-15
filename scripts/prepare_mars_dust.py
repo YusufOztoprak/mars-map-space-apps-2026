@@ -30,6 +30,7 @@ with netcdf_file(project / "data/raw/dust.nc", "r", mmap=False) as dataset:
     image = np.dstack((*rgb,np.isfinite(expanded)*255)).astype(np.uint8)
     Image.fromarray(image).save(root / "dust-my34-sol400.png")
     payload = {"year":34, "sol":400, "ls":round(float(v["Ls"].data[row]),2),
+               "legend":{"values":scale,"colors":["#%02x%02x%02x" % tuple(c) for c in channels]},
                "values": [[round(float(x),4) if np.isfinite(x) else None for x in line] for line in values],
                "url":"https://www-mars.lmd.jussieu.fr/mars/dust_climatology/",
                "paper":"https://doi.org/10.1029/2019JE006111"}
