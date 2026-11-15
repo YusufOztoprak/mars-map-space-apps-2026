@@ -7,27 +7,23 @@ from pathlib import Path
 
 import pytest
 
-REVISION = 'e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583'  # main at review time
+# Test the checked-out sources, including uncommitted integration changes.
 ROOT = Path(__file__).resolve().parents[1]
 
 
 @pytest.fixture(scope='module')
-def backend(tmp_path_factory):
+def backend(tmp_path_factory, request):
     pytest.importorskip('flask')
     pytest.importorskip('flask_cors')
     pytest.importorskip('numpy')
     pytest.importorskip('rasterio')
-    folder = tmp_path_factory.mktemp('backend_snapshot')
-    for name in ('app', 'dem_utils', 'routing'):
-        if os.environ.get('BACKEND_SNAPSHOT_DIR'):
-            (folder / f'{name}.py').write_bytes((Path(os.environ['BACKEND_SNAPSHOT_DIR']) / f'{name}.py').read_bytes())
-            continue
-        result = subprocess.run(['git', 'show', f'{REVISION}:backend/{name}.py'],
-                                cwd=ROOT, capture_output=True)
-        if result.returncode:
-            pytest.skip(f'Historical Git snapshot {REVISION} is unavailable in this checkout')
-        (folder / f'{name}.py').write_bytes(result.stdout)
-    saved = {name: sys.modules.pop(name, None) for name in ('dem_utils', 'routing')}
+    snapshot_root = tmp_path_factory.mktemp('backend_snapshot')
+    folder = snapshot_root / 'backend'
+    folder.mkdir()
+    source = Path(os.environ.get('BACKEND_SNAPSHOT_DIR', ROOT / 'backend'))
+    for file in source.glob('*.py'):
+        (folder / file.name).write_bytes(file.read_bytes())
+    saved = {name: sys.modules.pop(name, None) for name in ('dem_utils', 'routing', 'explorer')}
     sys.path.insert(0, str(folder))
     try:
         # Patch only the I/O boundary before app import. Real route, projection,
@@ -39,8 +35,20 @@ def backend(tmp_path_factory):
         x = 3396190 * math.radians(77.39) * math.cos(math.radians(18.4663))
         y = 3396190 * math.radians(18.42)
         with pytest.MonkeyPatch.context() as patch:
-            patch.setattr(dem_utils, 'load_dem', lambda path: (
-                np.zeros((200, 200)), from_origin(x, y, 20, 20), None, None))
+            mode = getattr(request, 'param', 'synthetic')
+            original_loader = dem_utils.load_dem
+            def loader(path):
+                if mode == 'missing':
+                    raise FileNotFoundError('injected missing DEM')
+                if mode == 'corrupt':
+                    raise ValueError('injected unreadable DEM')
+                if mode == 'real':
+                    dem_path = Path(os.environ.get('MARS_TEST_DEM', ROOT / 'data/jezero_dem.tif'))
+                    if not dem_path.is_file():
+                        pytest.skip('Real CTX DEM unavailable; set MARS_TEST_DEM')
+                    return original_loader(dem_path)
+                return np.zeros((200, 200)), from_origin(x, y, 20, 20), None, None
+            patch.setattr(dem_utils, 'load_dem', loader)
             spec = importlib.util.spec_from_file_location('review_backend', folder / 'app.py')
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)

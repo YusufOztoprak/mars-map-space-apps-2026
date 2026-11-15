@@ -4,3 +4,4 @@ flask>=3,<4
 flask-cors>=6,<7
 numpy>=2,<3
 rasterio>=1.4,<2
+pillow>=10,<14

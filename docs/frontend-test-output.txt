@@ -1,49 +1,49 @@
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Geçersiz rota metriği distance_km: -1
-Geçersiz rota metriği distance_km: -1
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Geçersiz rota metriği distance_km: NaN
-Geçersiz rota metriği distance_km: NaN
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Geçersiz rota metriği distance_km: Infinity
-Geçersiz rota metriği distance_km: Infinity
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Geçersiz rota metriği distance_km: 1
-Geçersiz rota metriği distance_km: 1
-Eğim katmanı bulunamadı (slope_overlay.json): HTTP 404
-Bilim noktaları yüklenemedi (../data/science_points.json): HTTP 404
-Geçersiz rota metriği distance_km: true
-Geçersiz rota metriği distance_km: true
-✔ click sequence, request mapping, route metrics and reset (16.9126ms)
-✔ HTTP 400 does not draw (0.9749ms)
-✔ HTTP 422 does not draw (0.7417ms)
-✔ HTTP 500 does not draw (0.6984ms)
-✔ HTTP 503 does not draw (0.7047ms)
-✔ network error is recoverable (0.7235ms)
-✔ malformed successful geometry must not reach Leaflet (0.721ms)
-✔ invalid metric -1 is not displayed as valid (0.9434ms)
-✔ invalid metric NaN is not displayed as valid (0.8943ms)
-✔ invalid metric Infinity is not displayed as valid (0.8334ms)
-✔ invalid metric 1 is not displayed as valid (0.7941ms)
-✔ invalid metric true is not displayed as valid (0.7394ms)
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Invalid route metric distance_km: -1
+Invalid route metric distance_km: -1
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Invalid route metric distance_km: NaN
+Invalid route metric distance_km: NaN
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Invalid route metric distance_km: Infinity
+Invalid route metric distance_km: Infinity
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Invalid route metric distance_km: 1
+Invalid route metric distance_km: 1
+Slope layer not found (slope_overlay.json): HTTP 404
+Science points failed to load (../data/science_points.json): HTTP 404
+Invalid route metric distance_km: true
+Invalid route metric distance_km: true
+✔ click sequence, request mapping, route metrics and reset (16.3929ms)
+✔ HTTP 400 does not draw (0.8984ms)
+✔ HTTP 422 does not draw (0.6482ms)
+✔ HTTP 500 does not draw (0.7035ms)
+✔ HTTP 503 does not draw (0.6718ms)
+✔ network error is recoverable (0.6855ms)
+✔ malformed successful geometry must not reach Leaflet (0.6741ms)
+✔ invalid metric -1 is not displayed as valid (0.8831ms)
+✔ invalid metric NaN is not displayed as valid (0.8388ms)
+✔ invalid metric Infinity is not displayed as valid (0.8424ms)
+✔ invalid metric 1 is not displayed as valid (0.7481ms)
+✔ invalid metric true is not displayed as valid (0.7158ms)
 ℹ tests 12
 ℹ suites 0
 ℹ pass 12
@@ -51,4 +51,4 @@ Geçersiz rota metriği distance_km: true
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 183.566
+ℹ duration_ms 89.0666
