@@ -1,5 +1,9 @@
 # Integration test report
 
+## Chrome update — 15 November 2026
+
+[Actual Chrome smoke test](chrome-smoke-2026-11-15.md): 3D loading, three candidate routes, Balanced selection, slope toggle/legend, Clear, invalid input and same-point recovery passed. Some remote tiles failed with an explicit fallback warning. **Legacy 2D startup FAILED on this Windows checkout**: CRLF conversion changes the Leaflet JS bytes, causing SRI rejection and `L is not defined`. This supersedes the generic browser-pending status below for the executed smoke scenarios; 2D retesting and unexecuted scenarios remain pending. Product files were not changed.
+
 Updated 15 November 2026. Product source baseline: main `008cf734fab40d5cad606170b37f6435d60775be`, with integration-only changes on `entegrasyon-test`. No backend/frontend product files were modified.
 
 ## Latest execution
