@@ -59,9 +59,13 @@ footer span{white-space:nowrap;text-overflow:ellipsis;overflow:hidden}
 .route-card p,.field span{font-size:.9rem}
 .field{display:grid;grid-template-columns:1fr 1.1fr;gap:9px;margin:5px 0}
 .field strong{font-weight:600;color:var(--text)}
+.field{grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);overflow-wrap:anywhere}
 .observation-image{display:block;width:100%;border-radius:6px;margin:8px 0}
 .caution{color:#ffd29a}.missing{color:#c5a8f2}.status-error{color:#ff9b8d!important}
 .sr{position:absolute;width:1px;height:1px;clip-path:inset(50%);overflow:hidden}
+.imagery-status{position:absolute;bottom:30px;left:8px;max-width:55%;padding:5px 8px;background:#10131de8;border-radius:5px;font-size:11px;pointer-events:none;z-index:2}
+.map-legend{position:absolute;right:8px;bottom:30px;max-width:300px;max-height:35%;overflow:auto;padding:8px;background:#10131df0;border:1px solid var(--line);border-radius:6px;z-index:3}
+.map-legend p{font-size:11px;margin:5px 0}.map-legend details{margin:4px 0}.unit-key{display:flex;gap:6px;align-items:center}.unit-key span{width:12px;height:12px;flex:none}
 @media(max-width:960px){main{grid-template-columns:205px minmax(0,1fr) 245px}}
 @media(max-width:730px){body{height:auto;min-height:100dvh;grid-template-rows:58px auto 34px}main{grid-template-columns:1fr 1fr}.viewport{grid-column:1/-1;grid-row:1;height:max(390px,57dvh)}.header-tools span{display:none}.app-header{padding:0 10px}}
 @media(max-width:420px){main{grid-template-columns:1fr}.viewport{grid-column:1}.right{grid-row:2}.app-header .brand small{display:none}}

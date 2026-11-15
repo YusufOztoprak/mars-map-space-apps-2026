@@ -1,0 +1,3 @@
+# PDS byte offsets and checksums require unmodified archive bytes.
+data/explorer/rad-sol1500/source.lbl -text -diff
+data/explorer/rad-sol1500/source-first-25000.txt -text -diff

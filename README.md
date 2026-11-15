@@ -105,7 +105,7 @@ API details: [`docs/integration.md`](docs/integration.md).
 - The 20° limit is a conservative prototype parameter, not a NASA standard.
 - The 2.2 km/h walking pace is an adapted assumption, not measured astronaut performance.
 - The 2D map uses a 463 m/pixel MOLA hillshade for context. The 3D planner can use the much coarser global MOLA elevation grid outside local DEM coverage.
-- Local requests cover at most 30 km of straight-line distance. Global MOLA requests cover at most 1,200 km and are limited to latitudes within 87 degrees of the equator.
+- The 3D Explorer has no fixed distance cap: long journeys switch to a bounded, adaptively sampled MOLA search, with native cells checked along returned paths. Polar endpoints are accepted. Search resolution, the coarse DEM, terrain constraints and missing measurements limit what can be concluded. The legacy 2D `/route` API retains its local 30 km limit.
 
 ## Future work
 
@@ -115,7 +115,7 @@ API details: [`docs/integration.md`](docs/integration.md).
 
 ## Earth relevance
 
-The same pipeline (elevation model → slope → walking cost → safest path) applies to search-and-rescue planning, mountain hiking and analog-astronaut field missions. NASA uses Lake Salda in Türkiye as an Earth analogue for Jezero because both have carbonate-bearing lake and delta deposits.
+The same pipeline (elevation model → slope → walking cost → terrain-weighted path) can inform prototypes for search-and-rescue planning, mountain hiking and analog-astronaut field missions. NASA uses Lake Salda in Türkiye as an Earth analogue for Jezero because both have carbonate-bearing lake and delta deposits.
 
 ## Repository layout
 

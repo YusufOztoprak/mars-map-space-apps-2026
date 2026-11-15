@@ -1,1 +1,40 @@
-[{"id":"meda","point":[77.450885,18.444627],"sol":1,"time":"15:27:28","value":-19.84,"unit":"°C","instrument":"Perseverance · MEDA ATS, sensor 1","source":"https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_0000_0089/sol_0001/","location":"Jezero landing area · approximate rover location"},{"id":"radiation","point":[137.4,-4.7],"sol":1500,"time":"2016-10-24 19:31:05.135001","value":263.26,"unit":"µGy/day","instrument":"Curiosity · RAD E detector","source":"https://doi.org/10.5281/zenodo.20536564","location":"Gale Crater · regional archive marker with no precise measurement location"}]
+[
+  {
+    "id": "meda",
+    "point": [
+      77.450885,
+      18.444627
+    ],
+    "sol": 1,
+    "time": "15:27:28",
+    "value": -19.84,
+    "unit": "°C",
+    "instrument": "Perseverance · MEDA ATS, sensor 1",
+    "source": "https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_0000_0089/sol_0001/",
+    "location": "Jezero landing area · approximate rover location"
+  },
+  {
+    "id": "radiation",
+    "point": [
+      137.3550896,
+      -4.70014911
+    ],
+    "sol": 1500,
+    "time": "2016-10-24T19:33:55+00:00",
+    "duration_s": 961,
+    "value": 10.92457,
+    "unit": "µGy/h",
+    "instrument": "Curiosity · RAD E detector",
+    "source": "https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_01418_01514/RAD_RDR_2016_298_19_33_1500_V00.TXT",
+    "label_url": "https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/DATA/SOL_01418_01514/RAD_RDR_2016_298_19_33_1500_V00.LBL",
+    "dataset": "MSL-M-RAD-3-RDR-V1.0",
+    "observation": "OBS000_TOT_DOSE_E_ELEMENT",
+    "location_source": "https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json",
+    "location": "NASA Sol 1500 rover endpoint; not a time-matched instrument position",
+    "coordinate_accuracy": "Same-sol rover waypoint association; exact observation position is unavailable (PDS geometry fields are zero placeholders).",
+    "scope": "local archived observation; no regional or global radiation coverage",
+    "license": "NASA PDS science data; retain dataset and producer attribution",
+    "producer": "RAD team / Southwest Research Institute · NASA PDS PPI",
+    "source_excerpt_sha256": "b3532b04ca251dbe3eb4925b1f72395c4b72fd53c174b1711d8e48f7892cf705"
+  }
+]

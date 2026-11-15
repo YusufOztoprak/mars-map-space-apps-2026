@@ -130,14 +130,9 @@ if (raw / "meda.csv").exists():
                          "unit":"°C", "instrument":"Perseverance · MEDA ATS, sensor 1",
                          "source":"https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_0000_0089/sol_0001/",
                          "location":"Jezero landing area · approximate rover location"})
-if (raw / "rad-dose.txt").exists():
-    with (raw / "rad-dose.txt").open(encoding="utf-8") as stream:
-        header, first = (line.strip().split("\t") for line in (next(stream), next(stream)))
-    # This export has an extra fractional day-of-year field before the Sol column.
-    assert len(first) == len(header) + 1 and "DoseE_filtered" in header[-1]
-    observations.append({"id":"radiation", "point":[137.4,-4.7], "sol":round(float(first[-3])),
-                         "time":first[0], "value":round(float(first[-2]), 2),
-                         "unit":"µGy/day", "instrument":"Curiosity · RAD E detector",
-                         "source":"https://doi.org/10.5281/zenodo.20536564",
-                         "location":"Gale Crater · regional archive marker with no precise measurement location"})
+# Keep the traceable PDS extraction; do not replace it with an unlocated export.
+verified = project / "data/explorer/observations.json"
+if verified.exists():
+    observations.extend(o for o in json.loads(verified.read_text(encoding="utf8"))
+                        if o.get("dataset") == "MSL-M-RAD-3-RDR-V1.0")
 save("observations.json", observations)

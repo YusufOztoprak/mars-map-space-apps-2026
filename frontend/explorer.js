@@ -8,7 +8,7 @@ const ctx = "https://astrogeology.usgs.gov/search/map/mars_2020_science_investig
 const jgeo = "https://pubs.usgs.gov/publication/sim3464";
 const ggeo = "https://pubs.usgs.gov/publication/sim3292";
 const meda = "https://pds-atmospheres.nmsu.edu/data_and_services/atmospheres_data/PERSEVERANCE/meda.html";
-const rad = "https://doi.org/10.5281/zenodo.20536564";
+const rad = "https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/";
 const dustSource = "https://www-mars.lmd.jussieu.fr/mars/dust_climatology/";
 const profileNames = {shortest: "Shortest", balanced: "Balanced", terrain: "Smoother terrain"};
 const factorNames = {height:"Elevation", slope:"Slope", roughness:"Roughness", geology:"Geology",
@@ -63,6 +63,19 @@ function parseCoords(value) {
   return {lat:+m[1], lon:longitude(+m[2])};
 }
 
+function opticalSelection(products,height,box) {
+  const t=Math.min(1,Math.max(0,(1.6e6-height)/1e6));
+  const detail=t*t*(3-2*t);
+  const backdrop=products.filter(p=>p.bounds[2]-p.bounds[0]>350 && p.instrument==="CTX");
+  const baseResolution=Math.min(...backdrop.map(p=>p.resolution_m));
+  const regional=products.filter(p=>p.bounds[2]-p.bounds[0]<350 && p.resolution_m<baseResolution
+    && box && box[0]<=box[2] && p.bounds[0]<=box[0] && p.bounds[1]<=box[1]
+    && p.bounds[2]>=box[2] && p.bounds[3]>=box[3] && height<Math.max(1500,p.resolution_m*8000))
+    .reduce((best,p)=>!best || p.resolution_m<best.resolution_m?p:best,null);
+  return {detail,active:detail?products.filter(p=>backdrop.includes(p) || p===regional ||
+    (p.id==="HiRISE_Global" && height<1500)):[]};
+}
+
 async function run() {
   if (!C) throw new Error("The 3D map library could not be loaded.");
   const ellipsoid = new C.Ellipsoid(3396190, 3396190, 3396190);
@@ -109,11 +122,12 @@ async function run() {
   const mission = new C.CustomDataSource("Rover tracks");
   for (const source of [selected, planned, mission]) viewer.dataSources.add(source);
   function marker(source, w, color, title, info) {
-    const entity = source.entities.add({position:cart(w.lon,w.lat), point:{
+    const reference=Number.isFinite(w.height)?C.HeightReference.NONE:C.HeightReference.CLAMP_TO_GROUND;
+    const entity = source.entities.add({position:cart(w.lon,w.lat,w.height || 0), point:{
       pixelSize:10,color:C.Color.fromCssColorString(color),outlineColor:C.Color.fromCssColorString("#141722"),
-      outlineWidth:2,heightReference:C.HeightReference.CLAMP_TO_GROUND},
+      outlineWidth:2,heightReference:reference,disableDepthTestDistance:100000},
       label:title ? {text:title,font:"600 13px sans-serif",showBackground:true,backgroundColor:C.Color.BLACK.withAlpha(.74),
-        pixelOffset:new C.Cartesian2(0,-16),heightReference:C.HeightReference.CLAMP_TO_GROUND,
+        pixelOffset:new C.Cartesian2(0,-16),heightReference:reference,disableDepthTestDistance:100000,
         distanceDisplayCondition:new C.DistanceDisplayCondition(0,250000)} : undefined});
     entity.readInfo = info;
     return entity;
@@ -172,6 +186,8 @@ async function run() {
     }))});
   }
   let meta = {};
+  let analysisModel="auto";
+  let analysisSource="Finest available elevation at each point";
   let pointLock = 0;
   let pickMode = "inspect";
   let controls = {};
@@ -182,9 +198,14 @@ async function run() {
     const target = $("point-info");
     target.replaceChildren(el("h3", o.instrument));
     field(target,"Measurement", `${fmt(o.value,2)} ${o.unit}`);
-    field(target,"Record", `Sol ${o.sol} · ${o.time}`);
+    field(target,"Record", `Sol ${o.sol} · ${o.time}${o.id==="meda"?" LTST":""}`);
     field(target,"Location", o.location);
+    if (o.duration_s) field(target,"Integration",`${o.duration_s} seconds`);
+    if (o.coordinate_accuracy) target.append(el("p",o.coordinate_accuracy));
+    if (o.dataset) field(target,"Dataset",o.dataset);
     target.append(el("p","Archived measurement for a specific place and time."),link("Measurement source",o.source));
+    if (o.label_url) target.append(el("br"),link("PDS units and record label",o.label_url));
+    if (o.location_source) target.append(el("br"),link("Same-sol rover position source",o.location_source));
   }
 
   async function inspect(point) {
@@ -194,7 +215,7 @@ async function run() {
     $("coordinates").textContent = $("footer-coordinates").textContent = label;
     target.replaceChildren(el("p", label),el("p","Loading location data…"));
     try {
-      const {terrain, geology, historical_dust} = await get(api + `/api/explorer/point?lat=${point.lat}&lon=${point.lon}`);
+      const {terrain, geology, historical_dust, coverage} = await get(api + `/api/explorer/point?lat=${point.lat}&lon=${point.lon}&model=${analysisModel}`);
       if (lock !== pointLock) return;
       target.replaceChildren(el("p",label));
       for (const [key, unit] of [["height","m"],["slope","°"],["roughness","m"]]) {
@@ -208,6 +229,14 @@ async function run() {
       field(target,"Historical dust model",historical_dust?
         `τ ${fmt(historical_dust.value,3)} · MY ${historical_dust.year}, Sol ${historical_dust.sol}`:null);
       if (historical_dust) target.append(link("MRO/MCS · Montabone et al.",historical_dust.url));
+      target.append(el("p",meta.elevation_reference || "Elevation relative to the Martian areoid."));
+      const available=(verifiedImagery.layers || []).filter(p=>contains(p.bounds,point));
+      field(target,"Optical imagery footprints",available.length ?
+        `${available.length} products; finest served pixel ≈ ${fmt(Math.min(...available.map(p=>p.resolution_m)),2)} m at equator` : "Viking context; no verified CTX/HiRISE footprint");
+      target.append(el("p","Footprints do not guarantee valid pixels. Imagery gaps retain the coarser base map."));
+      for (const [key,value] of Object.entries(coverage || {}))
+        field(target,`${factorNames[key] || key} coverage`,value.status.replaceAll("_"," "));
+      target.append(el("p","Missing environmental data are unknown, not zero risk. Archived point records do not establish route-time coverage."));
     } catch (error) {
       if (lock === pointLock) target.replaceChildren(el("p",label),el("p", "Could not load location data.", "status-error"));
     }
@@ -248,10 +277,13 @@ async function run() {
     enablePickFeatures:false,
   });
   const localRaster = name => new C.UrlTemplateImageryProvider({
-    url:api + `/api/explorer/raster/${name}/{z}/{x}/{y}.png`, tilingScheme, maximumLevel:12, enablePickFeatures:false,
+    url:api + `/api/explorer/raster/${name}/{z}/{x}/{y}.png?model=${analysisModel}`, tilingScheme, maximumLevel:17, enablePickFeatures:false,
   });
   const addImages = (providers, baseIndex) => providers.map((provider, i) => {
-    provider.errorEvent.addEventListener(event => {event.retry = false;});
+    provider.errorEvent.addEventListener(event => {
+      event.retry = false;
+      $("imagery-status").textContent="Some remote tiles could not load. Coarser imagery remains underneath; source coverage may contain gaps.";
+    });
     return viewer.imageryLayers.addImageryProvider(provider, baseIndex === undefined ? undefined : baseIndex+i);
   });
   const cache = new Map();
@@ -265,12 +297,13 @@ async function run() {
     return ds;
   }
 
+  const verifiedImagery=await cached(data+"imagery.json").catch(()=>({layers:[]}));
+  const contains=(b,p)=>p.lon>=b[0] && p.lon<=b[2] && p.lat>=b[1] && p.lat<=b[3];
+  const opticalLayers=new Map();
   const imageryProviders = [
     ...[0,1].map(i=>new C.SingleTileImageryProvider({url:data+`viking/${i}.jpg`,tileWidth:256,tileHeight:256,
       ellipsoid,rectangle:toRect([i*180-180,-90,i*180,90]),credit:"NASA/JPL · Viking / Mars Trek"})),
     wmts("Mars_Viking_MDIM21_ClrMosaic_global_232m","jpg",7,undefined,"NASA/JPL · Viking / Mars Trek"),
-    wmts("JEZ_ctx_B_soc_008_orthoMosaic_6m_Eqc_latTs0_lon0","png",13,[77.1604655,18.2110274,77.6991776,18.7211945]),
-    wmts("JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd","png",17,[77.2229331,18.3067994,77.583964,18.669315],"NASA/JPL/UArizona · HiRISE"),
   ];
   const imageLayers = addImages(imageryProviders,0);
 
@@ -282,7 +315,7 @@ async function run() {
       viewer.terrainProvider = new C.CustomHeightmapTerrainProvider({
         width:33,height:33,tilingScheme,credit:"NASA PDS MGS/MOLA · USGS MRO/CTX",
         callback:async (x,y,z)=>{
-          const level = Math.min(z,12);
+          const level = Math.min(z,17);
           if (z > level) {
             const factor = 2 ** (z-level);
             const parent = await heightBuffer(level, Math.floor(x/factor), Math.floor(y/factor));
@@ -318,32 +351,55 @@ async function run() {
   const localResolution = [meta.global_dem ? `${fmt(meta.global_dem.resolution_m,0)} m MOLA` : "",
     meta.ctx ? "20 m CTX" : "", meta.hirise ? "≈ 1 m HiRISE" : ""].filter(Boolean).join(" · ");
   const catalog = [
-    {id:"surface", name:"Surface imagery", author:"NASA/JPL · Viking, MRO CTX and HiRISE", resolution:"Viking 232 m · CTX 6 m · HiRISE 25 cm", unit:"Visible-light imagery", detail:"The imagery source changes automatically as you zoom in on Jezero.", url:trek, on:true, alpha:1, load:()=>imageLayers},
+    {id:"surface", name:"Surface imagery", author:"NASA/JPL/MSSS/UArizona · Viking, MRO CTX and HiRISE", resolution:"Viking 232 m · global CTX ≈10 m served pixels · regional CTX/HiRISE", unit:"Visible-light imagery", detail:"Verified optical mosaics load automatically by footprint and zoom. Global CTX source is nominally 5 m, but this WMTS stops at level 11 (512-pixel tiles, ≈10 m/pixel at the equator). Missing imagery retains the coarser map; source mosaics may have registration seams.", url:trek, on:true, alpha:1, load:()=>imageLayers},
     {id:"height", name:"Elevation", author:"MGS/MOLA and USGS CTX", resolution:localResolution, unit:"m · areoid", legend:"linear-gradient(90deg,#2d317b,#217099,#3b9a88,#e2b962,#be5733,#fdf2dc)", scale:"−9,000 · 0 · 22,000 m", url:mola, load:()=>addImages([localRaster("height")])},
+    {id:"relief", name:"Topographic relief", author:"MGS/MOLA · USGS CTX · HiRISE", resolution:localResolution, unit:"m · areoid", detail:"Elevation colors with DEM-derived hillshade (northwest light, 45° altitude). Brightness is illumination; hue encodes elevation.", url:mola, load:()=>addImages([localRaster("relief")])},
     {id:"slope", name:"Slope", author:"Derived from elevation models", resolution:localResolution, unit:"°", alpha:.58, legend:"linear-gradient(90deg,#235158,#378e88,#eac952,#f79036,#e94b3b,#901737)", scale:"0 · 5 · 10 · 15 · 20 · ≥30°", url:ctx, load:()=>addImages([localRaster("slope")])},
     {id:"roughness", name:"Surface roughness", author:"MOLA / CTX · derived from digital elevation", resolution:localResolution, unit:"m", detail:"Absolute difference between a cell's elevation and the mean of its four neighbors. Compare values at the same resolution.", legend:"linear-gradient(90deg,#193651,#3e7da7,#5bcdba,#e7ce76,#e97650,#fde6b8)", scale:"0 · 0.5 · 2 · 10 · 200 · ≥1,500 m", url:ctx, load:()=>addImages([localRaster("roughness")])},
     {id:"geology", name:"Geology", author:"USGS SIM 3464 / SIM 3292", resolution:"Jezero 1:75,000 · Mars 1:20,000,000", unit:"Geologic map unit", detail:"Colors distinguish map units. The location panel shows the unit code and map scale.", url:jgeo, alpha:.60, load:async()=>loadGeology()},
-    {id:"thermal", name:"Thermal inertia", author:"MGS / TES · NASA Mars Trek", resolution:"Source sampling approximately 3 km", unit:"J m⁻² K⁻¹ s⁻½", detail:"Colorized science mosaic with thermal inertia imagery only.", url:trek, load:()=>addImages([wmts("TES_Thermal_Inertia","png",1)])},
+    {id:"thermal", name:"Thermal inertia · source image", author:"MGS / TES · NASA Mars Trek", resolution:"Source sampling approximately 3 km; WMTS only levels 0–1", unit:"Source colors; numerical legend unavailable", detail:"Physical thermal inertia uses J m⁻² K⁻¹ s⁻½. This colorized WMTS has no verified numeric color key in this app: colors are not temperatures or route risk values.", url:trek, load:()=>addImages([wmts("TES_Thermal_Inertia","png",1)])},
     {id:"ir", name:"Nighttime infrared", author:"Mars Odyssey / THEMIS", resolution:"100 m · approximately ±65°", unit:"Relative infrared image brightness", detail:"Historical mosaic. Light and dark tones show image contrast.", legend:"linear-gradient(90deg,#1a1a1a,#e8e8e8)", url:trek, load:()=>addImages([wmts("THEMIS_NightIR_ControlledMosaics_100m_v2_oct2018","png",9,[-180,-65,180,65])])},
     {id:"temperature", name:"Temperature · MEDA", author:"Perseverance / MEDA ATS", resolution:"One location and time sample in Jezero", unit:"°C", detail:"Select the blue marker to view the archived measurement.", url:meda, load:()=>loadObservations("meda","#7cc8ff")},
     {id:"dust", name:"Dust · historical model", author:"MRO / MCS · Montabone et al.", resolution:"3° × 3° · MY34 Sol 400", unit:"9.3 µm τ · 610 Pa reference", detail:"Atmospheric dust model interpolated from archived observations for the specified sol.", url:dustSource, absent:!meta.dust_available,
       legend:"linear-gradient(90deg,#1c2552,#2f5c97,#41a7ac,#f6bb5e,#f56a36,#992740)", scale:"0 · 0.25 · 0.5 · 1 · 2 · ≥4",
       load:()=>addImages([new C.SingleTileImageryProvider({url:data+"dust-my34-sol400.png",
         tileWidth:720,tileHeight:360,ellipsoid,credit:"Montabone et al. · CC BY-SA 3.0"})])},
-    {id:"radiation", name:"Radiation · RAD", author:"Curiosity / RAD E", resolution:"Archived sample from Gale Crater", unit:"µGy/day", detail:"Select the purple marker to view a historical measurement from the Gale Crater region.", url:rad, load:()=>loadObservations("radiation","#c5a8f2")},
+    {id:"radiation", name:"Radiation · RAD", author:"Curiosity / RAD E · NASA PDS PPI", resolution:"One archived observation · same-sol rover waypoint", unit:"µGy/h · absorbed dose rate", detail:"Local historical observation, not a global map. The marker uses a same-sol rover endpoint, not exact instrument geometry. No radiation factor is applied to route costs; missing data are unknown.", url:rad, load:()=>loadObservations("radiation","#c5a8f2")},
     {id:"coverage", name:"Elevation data coverage", author:"USGS · CTX and HiRISE cell coverage", resolution:localResolution, unit:"Valid raster cell", detail:"Teal shows CTX coverage and purple shows HiRISE coverage. MOLA provides regional planning data elsewhere.", legend:"linear-gradient(90deg,#2fd8c5 50%,#bc96f6 50%)", url:ctx, load:()=>addImages([localRaster("coverage")])},
     {id:"science", name:"Science sites", author:"NASA/JPL · Perseverance", resolution:"Mission markers with varying location accuracy", unit:"Point", detail:"Select an orange marker to view a science site.", url:"https://science.nasa.gov/mission/mars-2020-perseverance/", on:true, load:()=>loadScience()},
   ];
+  for (const layer of catalog) {
+    if (["height","relief","slope","roughness","coverage"].includes(layer.id))
+      layer.absent=!meta.ctx && !meta.hirise && !meta.global_dem;
+    if (["height","relief"].includes(layer.id)) layer.alpha=1;
+    if (layer.id==="coverage") layer.scale="Teal: valid CTX cell · purple: valid HiRISE cell · transparent: no local DEM; MOLA may still be available";
+    const key=layer.id==="relief"?"height":layer.id;
+    const scheme=meta.legends?.[key];
+    if (scheme) {
+      const first=scheme.values[0],last=scheme.values.at(-1);
+      layer.legend=`linear-gradient(90deg,${scheme.colors.map((c,i)=>`${c} ${100*(scheme.values[i]-first)/(last-first)}%`).join(",")})`;
+      layer.scale=scheme.values.map(v=>fmt(v,2)).join(" · ")+` ${layer.unit}`;
+      if (key==="slope") layer.scale+=" · 15–20° caution; >20° excluded from routing";
+      if (key==="height") layer.scale+="; outside endpoints colors saturate";
+    }
+  }
+  const unitColor=unit=>{
+    let hash=0;
+    for (const c of String(unit)) hash=(hash*31+c.charCodeAt(0))>>>0;
+    return `hsl(${hash%360}, ${45+(hash>>>8)%20}%, ${48+(hash>>>16)%16}%)`;
+  };
 
   async function loadGeology() {
     const products = ["global","jezero"].filter(scope=>meta.geology?.[scope]);
     if (!products.length) throw new Error("The geology layer is unavailable.");
-    const colors = ["#be7a65","#bb9961","#82a27f","#967caf","#7ea8af","#ce8f9c"];
     const layers = [];
     for (const scope of products) {
       const geo = await cached(data+`${scope}-geology.geojson`);
       const ds = collection(scope+" geology");
-      const color = unit => colors[Array.from(String(unit)).reduce((a,c)=>a+c.charCodeAt(0),0)%colors.length];
+      const color = unitColor;
+      const geologyLayer=catalog.find(l=>l.id==="geology");
+      geologyLayer.unitLegend ||= {};
+      geologyLayer.unitLegend[scope]=[...new Map(geo.features.map(f=>[f.properties.unit,f.properties])).values()];
       ds.entities.suspendEvents();
       for (const f of geo.features) {
         const g=f.geometry;
@@ -362,11 +418,14 @@ async function run() {
     }
     return layers;
   }
-  function loadObservations(id,color) {
+  async function loadObservations(id,color) {
     const ds = collection(id);
     const records = (meta.observations || []).filter(o=>o.id===id);
     if (!records.length) throw new Error("The sample measurement is unavailable.");
-    for (const o of records) marker(ds,{lon:o.point[0],lat:o.point[1]},color,id==="meda"?"MEDA":"RAD",()=>observationInfo(o));
+    const heights=await get(api+"/api/explorer/heights",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify(records.map(o=>o.point))}).catch(()=>records.map(()=>null));
+    records.forEach((o,i)=>marker(ds,{lon:o.point[0],lat:o.point[1],height:heights[i]===null?undefined:heights[i]+3},
+      color,id==="meda"?"MEDA":"RAD",()=>observationInfo(o)));
     return [ds];
   }
   async function loadScience() {
@@ -404,6 +463,8 @@ async function run() {
       }
     }
     if (layer.id==="geology") updateView();
+    if (layer.id==="surface") updateOptical();
+    updateLegends();
     $("footer-layer").textContent = catalog.filter(l=>l.checkbox?.checked).map(l=>l.name).join(" · ") || "No layers selected";
     scene.requestRender();
   }
@@ -413,7 +474,8 @@ async function run() {
       try {
         layer.pending ||= Promise.resolve(layer.load());
         layer.items=await layer.pending;
-        layer.status.textContent="";
+        layer.status.textContent=layer.id==="radiation"?"Only a local Gale Crater archive record. Use Show archived observation; no radiation coverage elsewhere.":
+          layer.id==="temperature"?"Only a local Jezero archive record. Use Show archived observation; no global temperature coverage.":"";
       } catch (error) {
         layer.pending=null;
         layer.checkbox.checked=false;
@@ -421,6 +483,77 @@ async function run() {
       }
     }
     updateLayer(layer);
+  }
+  function updateLegends() {
+    const target=$("map-legend");
+    target.replaceChildren();
+    for (const layer of catalog.filter(l=>l.checkbox?.checked && !["surface","science"].includes(l.id))) {
+      const box=el("details");box.open=true;
+      box.append(el("summary",layer.name));
+      if (layer.legend) {
+        const gradient=el("div",undefined,"legend");gradient.style.background=layer.legend;
+        box.append(gradient,el("small",layer.scale || layer.unit));
+      } else if (layer.id==="geology") {
+        box.append(el("small","Display palette; unit names follow USGS maps. Not official map colors."));
+        for (const p of layer.unitLegend?.[layer.legendScope || "global"] || []) {
+          const row=el("div",undefined,"unit-key"),swatch=el("span");swatch.style.background=unitColor(p.unit);
+          row.append(swatch,el("small",`${p.unit} · ${p.name}`));box.append(row);
+        }
+      } else if (["radiation","temperature"].includes(layer.id)) {
+        const id=layer.id==="temperature"?"meda":"radiation";
+        const records=(meta.observations || []).filter(o=>o.id===id);
+        box.append(el("small",records.length?records.map(o=>`${fmt(o.value,5)} ${o.unit} · ${o.time} · Sol ${o.sol}`).join("; "):"No archived measurement available."));
+        box.append(el("p","Colored markers denote local historical observations; no surrounding dose or temperature field is inferred."));
+      } else box.append(el("small",layer.detail || layer.unit));
+      if (["height","relief","slope","roughness"].includes(layer.id)) box.append(el("p",analysisSource));
+      if (layer.slider && +layer.slider.value<100) box.append(el("p",`Opacity ${layer.slider.value}%: display colors blend with underlying layers; the key describes source colors.`));
+      if (layer.id==="height" || layer.id==="relief") box.append(el("p",meta.elevation_reference));
+      target.append(box);
+    }
+    target.hidden=!target.children.length;
+  }
+  function updateOptical() {
+    const surface=catalog.find(l=>l.id==="surface");
+    if (!surface?.checkbox) return;
+    const height=viewer.camera.positionCartographic.height;
+    const view=viewer.camera.computeViewRectangle(ellipsoid);
+    const box=view && [C.Math.toDegrees(view.west),C.Math.toDegrees(view.south),
+                       C.Math.toDegrees(view.east),C.Math.toDegrees(view.north)];
+    const products=verifiedImagery.layers || [];
+    const selection=opticalSelection(products,height,box);
+    const {detail}=selection;
+    // A grayscale coarse fallback fills genuine CTX/HiRISE gaps without brown
+    // stripes. No detail is synthesized; the far-view Viking colors are retained.
+    for (const layer of imageLayers.slice(0,3)) layer.saturation=1-detail;
+    const active=[];
+    for (const product of products) {
+      // A regional image must cover the view: isolated rectangular patches do
+      // not stack across the global mosaic at wide zoom levels.
+      const visible=selection.active.includes(product);
+      if (visible && !opticalLayers.has(product.id)) {
+        const provider=new C.UrlTemplateImageryProvider({url:product.template,tilingScheme,
+          tileWidth:product.tile_width,tileHeight:product.tile_height,
+          maximumLevel:product.max_level,rectangle:toRect(product.bounds),credit:product.attribution,enablePickFeatures:false});
+        const [layer]=addImages([provider]);
+        opticalLayers.set(product.id,layer);imageLayers.push(layer);
+      }
+      const layer=opticalLayers.get(product.id);
+      if (layer) {
+        layer.show=Boolean(visible && surface.checkbox.checked);layer.alpha=detail*+surface.slider.value/100;
+        if (layer.show) active.push(product);
+      }
+    }
+    // Keep science overlays above optical imagery; finer products above coarse ones.
+    for (const p of [...(verifiedImagery.layers || [])].reverse()) {
+      const layer=opticalLayers.get(p.id);
+      if (layer) viewer.imageryLayers.lowerToBottom(layer);
+    }
+    for (const layer of imageLayers.slice(0,3).reverse()) viewer.imageryLayers.lowerToBottom(layer);
+    const point=pick(new C.Cartesian2(scene.canvas.clientWidth/2,scene.canvas.clientHeight/2));
+    const best=active.filter(p=>point && contains(p.bounds,point)).at(-1);
+    $("imagery-status").textContent=best?`${best.instrument} · finest served pixel ≈ ${fmt(best.resolution_m,2)} m at equator. Footprint may contain gaps; actual tile detail varies.`:
+      "Viking 232 m color context. Zoom in for CTX/HiRISE; gaps use a coarser grayscale background.";
+    if (detail>0) $("imagery-status").textContent+=" Coarser gaps remain grayscale; original mosaic seams can remain.";
   }
   for (const layer of catalog) {
     const row=el("div",undefined,"layer-row");
@@ -441,7 +574,18 @@ async function run() {
     layer.slider.setAttribute("aria-label",layer.name+" opacity");
     if (!layer.absent) details.append(layer.slider);
     layer.status=el("small",undefined,"missing");
+    if (layer.absent) layer.status.textContent="Required local data product is unavailable.";
     row.append(title,details,layer.status);$("layers").append(row);
+    if (["radiation","temperature"].includes(layer.id)) {
+      const show=el("button","Show archived observation");show.type="button";
+      show.onclick=()=>{
+        const record=(meta.observations || []).find(o=>o.id===(layer.id==="temperature"?"meda":"radiation"));
+        if (!record) {layer.status.textContent="No archived record is installed.";return;}
+        layer.checkbox.checked=true;toggleLayer(layer);
+        fly({lon:record.point[0],lat:record.point[1]},24000);observationInfo(record);
+      };
+      row.append(show);
+    }
     layer.checkbox.onchange=()=>toggleLayer(layer);
     layer.slider.oninput=()=>updateLayer(layer);
     if (layer.on) toggleLayer(layer);
@@ -455,6 +599,7 @@ async function run() {
   }
 
   const updateView = () => {
+    updateOptical();
     const lonlat=pick(new C.Cartesian2(scene.canvas.clientWidth/2,scene.canvas.clientHeight/2));
     const high=viewer.camera.positionCartographic.height;
     const b=meta.ctx_bounds;
@@ -462,11 +607,13 @@ async function run() {
     const fine=meta.hirise_bounds;
     const precise=fine && lonlat && high<10000 && lonlat.lon>=fine[0] && lonlat.lon<=fine[2] && lonlat.lat>=fine[1] && lonlat.lat<=fine[3];
     $("map-mode").textContent=local?"Jezero · 3D":"Mars · 3D";
-    $("footer-source").textContent=precise?"Elevation · HiRISE ≈ 1 m":local?"Elevation · CTX 20 m":meta.global_dem?`Elevation · MOLA ${fmt(meta.global_dem.resolution_m,0)} m`:"Mars 2000 · R 3,396.19 km";
+    $("footer-source").textContent=precise?"3D terrain · HiRISE ≈ 1 m":local?"3D terrain · CTX 20 m":meta.global_dem?`3D terrain · MOLA ${fmt(meta.global_dem.resolution_m,0)} m`:"Mars 2000 · R 3,396.19 km";
     for (const layer of catalog.filter(l=>l.id==="geology")) if (layer.items?.length===2 && layer.checkbox.checked) {
       layer.items[1].show=Boolean(local);
       layer.items[0].show=!local;
+      layer.legendScope=local?"jezero":"global";
     }
+    updateLegends();
     if (lonlat) {
       const other=pick(new C.Cartesian2(scene.canvas.clientWidth/2+55,scene.canvas.clientHeight/2));
       const length=other ? C.Cartesian3.distance(cart(lonlat.lon,lonlat.lat),cart(other.lon,other.lat)) : 0;
@@ -474,6 +621,11 @@ async function run() {
     }
   };
   viewer.camera.moveEnd.addEventListener(updateView);
+  let opticalUpdate=0;
+  viewer.camera.changed.addEventListener(()=>{
+    if (performance.now()-opticalUpdate<150) return;
+    opticalUpdate=performance.now();updateOptical();
+  });
   updateView();
 
   function gotoPlace(p) {
@@ -561,6 +713,7 @@ async function run() {
   };
 
   function displayRoutes(result, active) {
+    setAnalysisModel(result.source.id,result.source.name);
     planned.entities.removeAll();
     routeStrokes.length=0;
     const cards=$("route-results");
@@ -582,7 +735,8 @@ async function run() {
         field(card,"Estimated walking time",`${fmt(p.estimated_time_hours,2)} h`);
         field(card,"Mean roughness",p.mean_roughness_m===null?null:`${fmt(p.mean_roughness_m,2)} m`);
         field(card,"Steep segments",String(p.hazards.length));
-        field(card,"Endpoint offset",`${fmt(p.start_snap_m,0)} / ${fmt(p.end_snap_m,0)} m`);
+        field(card,"Search grid offset",`${fmt(p.start_snap_m,0)} / ${fmt(p.end_snap_m,0)} m`);
+        if (p.source.routing_step_m) field(card,"Routing search step",`${fmt(p.source.routing_step_m/1000,2)} km`);
         if (p.distance_km===0) card.append(el("p","Both endpoints fall in the same elevation cell. Use a finer model for a route at this scale.","caution"));
         if (active>0) {
           const first=result.features[0].properties;
@@ -650,11 +804,21 @@ async function run() {
     }
   };
   $("reset").onclick=()=>{
+    setAnalysisModel("auto","Finest available elevation at each point");
     routeVersion++;pointLock++;selected.entities.removeAll();planned.entities.removeAll();searchMark=null;routeStrokes.length=0;
     for(const id of ["start","end"]) { $(id).value="";delete endpoints[id]; }
     $("route-status").textContent=""; $("route-results").replaceChildren();$("calculate").disabled=false;
     setMode("inspect");scene.requestRender();
   };
+  function setAnalysisModel(model,source) {
+    if (analysisModel===model) return;
+    analysisModel=model;analysisSource=source;
+    for (const layer of catalog.filter(l=>["height","relief","slope","roughness"].includes(l.id))) {
+      for (const item of layer.items || []) viewer.imageryLayers.remove(item,true);
+      layer.items=null;layer.pending=null;
+      if (layer.checkbox.checked) toggleLayer(layer);
+    }
+  }
   window.marsExplorer={viewer,meta};
 }
 

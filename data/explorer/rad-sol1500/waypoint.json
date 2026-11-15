@@ -1,0 +1,32 @@
+{
+  "type": "Feature",
+  "properties": {
+    "RMC": "58_2394",
+    "site": 58,
+    "drive": 2394,
+    "sol": 1500,
+    "easting": 8141681.388,
+    "northing": -278599.917,
+    "elev_geoid": -4358.73,
+    "lon": 137.3550896,
+    "lat": -4.70014911,
+    "roll": -7.39,
+    "pitch": 0.66,
+    "yaw": 98.6,
+    "yaw_rad": 1.72083,
+    "tilt": 7.42,
+    "dist_m": 31.3,
+    "dist_total_m": 14762.9,
+    "dist_km": 14.56,
+    "dist_mi": 9.05,
+    "drive_type": "final"
+  },
+  "geometry": {
+    "type": "Point",
+    "coordinates": [
+      137.3550896,
+      -4.70014911,
+      -4358.73
+    ]
+  }
+}

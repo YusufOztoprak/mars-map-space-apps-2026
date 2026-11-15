@@ -38,7 +38,7 @@ https://github.com/YusufOztoprak/mars-map-space-apps-2026
 
 - Explore the full Mars globe and search for named features or coordinates.
 - Switch among surface imagery, elevation, slope, roughness, geology, thermal imagery, archived measurements and data coverage.
-- Compare shortest, balanced and smoother-terrain candidates. The route engine uses the finest elevation grid that covers both endpoints.
+- Compare distance-priority, balanced and smoother-terrain candidates. The route engine uses a suitable common elevation grid; long journeys switch to coarse MOLA with an adaptive search step. Returned geometry connects the selected endpoints, and available native cells along it are checked.
 - Inspect NASA science sites, view Perseverance photos and follow archived Perseverance, Curiosity, Spirit and Opportunity traverses.
 - Review distance, walking-time estimate, maximum slope, ascent and descent, elevation coverage and gaps in environmental data.
 
@@ -62,6 +62,11 @@ The application reports model-based planning candidates. Small hazards can fall 
 Select the form option for **Code and data**; do not select “I did not use SI.” The tools assisted with implementation, debugging, tests, literature review, science-point data, summaries, attributions, and metadata checks. The team reviewed the outputs against NASA/USGS sources. No imagery was AI-generated. The form requires code/data assistance to be acknowledged in descriptive text and metadata; this use is also documented in [`ai_usage.md`](../ai_usage.md).
 
 ### NASA Data (required; repeatable Link Text / Link URL rows)
+
+- **Link Text:** NASA PDS — numerical MGS MOLA MEGDR topography (16 pixels/degree used by 3D Explorer); **Link URL:** https://pds-geosciences.wustl.edu/missions/mgs/megdr.html
+- **Link Text:** NASA Mars Trek — global CTX optical mosaic capabilities; **Link URL:** https://trek.nasa.gov/tiles/Mars/EQ/CTX_beta01_uncontrolled_5m_Caltech/1.0.0/WMTSCapabilities.xml
+- **Link Text:** NASA PDS PPI — Curiosity RAD calibrated RDR; **Link URL:** https://pds-ppi.igpp.ucla.edu/data/MSL-M-RAD-3-RDR-V1.0/
+- **Link Text:** NASA PDS — Perseverance MEDA archived measurements; **Link URL:** https://atmos.nmsu.edu/PDS/data/PDS4/Mars2020/mars2020_meda/data_calibrated_env/sol_0000_0089/sol_0001/
 
 - **Link Text:** NASA Mars Trek — Jezero HiRISE orthomosaic (~25 cm/pixel); **Link URL:** https://trek.nasa.gov/tiles/Mars/EQ/JEZ_hirise_soc_006_orthoMosaic_25cm_Eqc_latTs0_lon0_first_dd/1.0.0/WMTSCapabilities.xml
 - **Link Text:** NASA Mars Trek — MGS MOLA Global Color Hillshade (~463 m/pixel); **Link URL:** https://trek.nasa.gov/tiles/apidoc/trekAPI.html?body=mars

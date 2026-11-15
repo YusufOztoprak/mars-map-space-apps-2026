@@ -1,0 +1,17 @@
+sssssssssssssssssssss.................................ssssss             [100%]
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_backend_snapshot.py:66: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [5] tests\test_backend_snapshot.py:73: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:82: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:88: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:96: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:104: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:110: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:116: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:127: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:137: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [5] tests\test_backend_snapshot.py:147: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:154: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [1] tests\test_backend_snapshot.py:163: Historical Git snapshot e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583 is unavailable in this checkout
+SKIPPED [6] tests\test_pending_integration.py:5: Backend/frontend/DEM absent; requirement only, no integration executed
+33 passed, 27 skipped in 0.45s
