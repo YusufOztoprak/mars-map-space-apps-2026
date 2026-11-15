@@ -1,5 +1,12 @@
 # Integration and test report
 
+## 3D application verification
+
+The current 3D application and the previous 2D map can be exercised locally. The backend suite covers candidate routes, terrain source selection, missing data, diagonal corner blocking, input validation, the legacy route contract and DEM-backed results. The browser walkthrough covers the globe, zoom, location search, map layers, route comparisons, coverage messages and archived rover traverses.
+
+The current application test run on November 14, 2026 recorded **51 passed and 6 skipped**. The run excluded the historical backend snapshot suite. The Chromium walkthrough also verified English route results and the 2D map. The manual integration scenarios are tracked separately. See the [end-to-end plan](e2e-plan.md) and the [frontend checklist](frontend-checklist.md).
+
+
 ## Submission refresh — current root test run
 
 Current main snapshot: `e880bcc36e7f2b7b6a8bf2c9ec3dd3f92bb73583`.

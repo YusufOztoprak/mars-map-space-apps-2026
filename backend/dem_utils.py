@@ -54,3 +54,22 @@ def compute_slope(elevation, cellsize):
     dy, dx = np.gradient(elevation, cellsize)
     slope_radians = np.arctan(np.sqrt(dx ** 2 + dy ** 2))
     return np.degrees(slope_radians)
+
+
+def terrain_metrics(elevation, cellsize, nodata, horizontal_spacing=None):
+    """Return valid elevation, central-difference slope, and a five-cell roughness proxy."""
+    valid = np.isfinite(elevation)
+    if nodata is not None:
+        valid &= elevation != nodata
+    heights = np.where(valid, elevation, np.nan).astype(np.float32)
+    if horizontal_spacing is None:
+        slope = compute_slope(heights, cellsize)
+    else:
+        dy, dx = np.gradient(heights, cellsize, horizontal_spacing)
+        slope = np.degrees(np.arctan(np.hypot(dx, dy)))
+    slope[~valid] = np.nan
+    roughness = np.full(heights.shape, np.nan, dtype=np.float32)
+    cross_mean = (heights[:-2, 1:-1] + heights[2:, 1:-1] +
+                  heights[1:-1, :-2] + heights[1:-1, 2:]) / 4
+    roughness[1:-1, 1:-1] = np.abs(heights[1:-1, 1:-1] - cross_mean)
+    return heights, slope, roughness

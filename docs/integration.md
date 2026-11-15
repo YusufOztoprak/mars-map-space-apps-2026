@@ -1,6 +1,8 @@
 ﻿# Backend Integration Guide — /route
 
 ## Overview
+
+The 3D planner exposes `POST /api/explorer/routes` and uses CTX, HiRISE or MOLA according to coverage. This guide describes the legacy `/route` endpoint. [3D data and routing method](explorer-data.md)
 Flask REST API that computes a safety-aware walking route between two points in Jezero Crater, Mars, using the USGS Mars 2020 CTX DEM (20 m/pixel).
 
 ## Endpoint
@@ -26,7 +28,7 @@ Flask REST API that computes a safety-aware walking route between two points in 
 - `max_slope_deg` never exceeds 20.
 
 ### Errors
-Always JSON: `{"error": "<message>"}`.
+Always JSON: `{"error": "<message>"}` (messages are in English).
 
 | Status | Meaning |
 |---|---|
@@ -41,7 +43,7 @@ Always JSON: `{"error": "<message>"}`.
 2. **Slope** per cell from `np.gradient`.
 3. **Walking speed** from Tobler's hiking function, scaled to a 2.2 km/h EVA pace. This is an adapted assumption, not a NASA figure. Cost = seconds to cross a cell.
 4. **Impassable cells:** slope above 20° or no data. 20° is a conservative prototype parameter, not a NASA safety standard. The 20 m DEM averages out local steepness, so real slopes can be steeper than the DEM shows.
-5. **Search:** weighted A* (8-connected, weight 1.2, heuristic scaled to the minimum cell cost). Route cost is guaranteed to be within 20% of optimal; in our tests the difference was about 2%. A 20 km route takes about 2 seconds.
+5. **Search:** weighted A* (8-connected, weight 1.2, heuristic scaled to the minimum cell cost). The heuristic weight prioritizes search speed.
 
 ## Slope hazard overlay
 `backend/make_slope_overlay.py` writes `frontend/slope_overlay.png` and `frontend/slope_overlay.json` from the same slope grid the router uses: yellow 10–15°, orange 15–20°, red above 20° (the route never enters red cells). Rerun it if the slope limit changes.
@@ -54,7 +56,7 @@ Allowed origins: `http://localhost:8000`, `http://127.0.0.1:8000`. Add others in
    `curl -L -o data/jezero_dem.tif "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif"`
    (on Windows PowerShell use `curl.exe`). Expected SHA-256: `BA7F706EA1B5D63A562F28A7DCF7A7F3C79BCE7F048E6974B57E8A33C30D1BA2`.
 2. Backend: `cd backend`, `pip install -r requirements.txt`, `python app.py` → `http://localhost:5000`
-3. Frontend, from the repo root: `python -m http.server 8000` → `http://localhost:8000/frontend/index.html`
+3. Frontend, from the repo root: `python -m http.server 8000` → `http://localhost:8000/frontend/legacy.html`
 4. Tests: `cd backend`, `python -m pytest tests/ -v`
 
 ## Limits

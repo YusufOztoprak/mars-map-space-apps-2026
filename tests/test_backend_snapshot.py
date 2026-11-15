@@ -23,7 +23,9 @@ def backend(tmp_path_factory):
             (folder / f'{name}.py').write_bytes((Path(os.environ['BACKEND_SNAPSHOT_DIR']) / f'{name}.py').read_bytes())
             continue
         result = subprocess.run(['git', 'show', f'{REVISION}:backend/{name}.py'],
-                                cwd=ROOT, capture_output=True, check=True)
+                                cwd=ROOT, capture_output=True)
+        if result.returncode:
+            pytest.skip(f'Historical Git snapshot {REVISION} is unavailable in this checkout')
         (folder / f'{name}.py').write_bytes(result.stdout)
     saved = {name: sys.modules.pop(name, None) for name in ('dem_utils', 'routing')}
     sys.path.insert(0, str(folder))

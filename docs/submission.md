@@ -20,11 +20,11 @@
 
 ### Project Name
 
-**Jezero Safe Route — a layered Marswalk planner**
+**Mars Explorer — a layered Marswalk planner**
 
 ### Summary (required; max 1,500 characters; suggested 50–200 words)
 
-Jezero Safe Route is a web map for planning Marswalks across Jezero Crater. It combines 20 m/pixel CTX elevation data, HiRISE imagery, and Perseverance science sites. Choose a start and destination to calculate a route that avoids modeled slopes above 20° and reports distance, estimated walking time, and maximum slope. A global MOLA hillshade adds planetary context but does not affect routing.
+Mars Explorer is an interactive 3D map that helps explorers plan candidate walks and identify science sites at Jezero Crater. It combines NASA and USGS imagery, digital elevation models, surface geology and archived rover observations. Select two points and compare candidate routes by distance, steepest slope, ascent, descent and estimated walking time. The map shows steep segments and identifies data gaps along each route.
 
 ### Project Demonstration (required)
 
@@ -36,9 +36,26 @@ https://github.com/YusufOztoprak/mars-map-space-apps-2026
 
 ### Project Details (required)
 
-Users select two locations on an interactive map of Jezero Crater. The Flask API reads the USGS 20 m/pixel CTX DEM, derives slope, excludes cells above the 20° prototype limit and no-data cells, then uses a Tobler-based walking cost and weighted A* to return a GeoJSON route with distance, estimated time, and maximum slope. The Leaflet map displays the route over NASA Mars Trek HiRISE imagery, with optional slope-hazard and global MOLA context layers. Five Perseverance waypoints open credited rover images and short science summaries.
+- Explore the full Mars globe and search for named features or coordinates.
+- Switch among surface imagery, elevation, slope, roughness, geology, thermal imagery, archived measurements and data coverage.
+- Compare shortest, balanced and smoother-terrain candidates. The route engine uses the finest elevation grid that covers both endpoints.
+- Inspect NASA science sites, view Perseverance photos and follow archived Perseverance, Curiosity, Spirit and Opportunity traverses.
+- Review distance, walking-time estimate, maximum slope, ascent and descent, elevation coverage and gaps in environmental data.
 
-The route is a planning aid, not a safety certification. A 20 m DEM cannot resolve small rocks or scarps; 20° and 2.2 km/h are prototype assumptions. The roughly 463 m/pixel MOLA hillshade is visual context only. Requests over 30 km straight-line distance are rejected.
+| Data | Use |
+| --- | --- |
+| MRO HiRISE imagery and stereo elevation | Detailed imagery and 1.02 m elevation analysis within an approximately 1 km² Jezero window. |
+| MRO CTX Jezero DEM | 20 m elevation analysis across the broader Jezero area. |
+| Mars Global Surveyor MOLA | Global elevation and coarse regional route planning at about 3.7 km per sample at the equator. |
+| USGS geology | Jezero and global geologic units for scientific context. |
+| Perseverance mission data | Science sites, photos, archived traverse and a MEDA air-temperature sample. |
+| Curiosity RAD and MCS-based dust climatology | Archived radiation sample at Gale Crater and historical atmospheric context. |
+
+The planner searches an elevation grid, excludes cells above a prototype 20° slope limit, and compares candidates using different weights for distance, slope and roughness. The app groups adjacent elevated-slope samples into warning segments. Users can also see the availability of each selected data type along the route. [Complete sources, credits and licenses](explorer-data.md)
+
+In a Jezero demonstration, the shortest candidate is approximately 1.64 km with a maximum modeled slope of 16.1°. The smoother-terrain candidate is approximately 1.68 km with a maximum modeled slope of 10.3°. The example uses a 20 m CTX elevation grid and coordinates 18.44° N, 77.42° E to 18.46° N, 77.40° E.
+
+The application reports model-based planning candidates. Small hazards can fall below the terrain data's resolution. Available radiation and temperature samples are limited to specific rover locations and times. The dust layer illustrates an archived Martian sol. Environmental gaps are shown separately from terrain warnings. [Verification notes](test-report.md)
 
 ### Use of Super Intelligence (SI) (required; select all that apply)
 
@@ -64,7 +81,7 @@ Select the form option for **Code and data**; do not select “I did not use SI.
 - **Link Text:** NASA Science — Three Forks Sample Depot map; **Link URL:** https://science.nasa.gov/resource/perseverances-three-forks-sample-depot-map/
 - **Link Text:** NASA Science — Lake Salda and Mars; **Link URL:** https://science.nasa.gov/blogs/earth-matters/2021/02/17/what-a-lake-in-turkey-can-tell-us-about-mars/
 
-Attributions: HiRISE — **NASA/JPL/University of Arizona · NASA Mars Trek**; MOLA — **NASA/JPL/GSFC · NASA Mars Trek**; Perseverance data/images — **NASA/JPL-Caltech**, with image-specific credits in `data/science_points.json`. MOLA is visual context only; route and slope calculations use the CTX DEM.
+Attributions: HiRISE — **NASA/JPL/University of Arizona · NASA Mars Trek**; MOLA — **NASA/JPL/GSFC · NASA Mars Trek**; Perseverance data/images — **NASA/JPL-Caltech**, with image-specific credits in `data/science_points.json`. The 2D view uses MOLA for visual context. The 3D planner uses HiRISE or CTX where local elevation coverage permits and MOLA for coarse regional planning. See [all 3D data sources and credits](explorer-data.md).
 
 ### Space Agency Partner & Other Data (repeatable Link Text / Link URL rows)
 
@@ -82,17 +99,19 @@ Source: [NASA Science — “What a Lake in Turkey Can Tell Us about Mars”](ht
 
 ## Slide outline (maximum 7 slides)
 
-1. Title, team, and challenge.
-2. Jezero problem and our live route planner.
-3. NASA data layers: HiRISE, CTX DEM, MOLA context, and Perseverance sites.
-4. Route method: elevation → slope → walking cost → A*.
-5. Demo: choose two points, view route, toggle slope hazards, open a science popup.
-6. Lake Salda analogue and Earth relevance.
-7. Validation status, limitations, and future Mars-wide work.
+1. **Mars Explorer** — Planning a science walk on Mars with orbital and rover data.
+2. **Explore Jezero** — Show the 3D globe, land at Jezero and open a Perseverance science site.
+3. **Show the data** — Compare imagery, elevation, slope, geology and coverage. Identify the scale of each terrain source.
+4. **Plan a walk** — Pick two endpoints and compare distances and maximum modeled slopes.
+5. **Read the route** — Show orange steep segments and the dashed purple line where a selected dataset is missing.
+6. **Compare Jezero and Lake Salda** — Show what carbonate minerals and delta deposits tell us about ancient lake environments.
+7. **Explain the limits** — Show the rugged terrain that motivates higher resolution and identify the environmental measurements a mission would still need.
 
 ## 30-second video alternative
 
-- **0–5 s:** Jezero map — “Plan a Marswalk through Jezero Crater.”
-- **5–15 s:** Select endpoints; show the generated route and metrics.
-- **15–23 s:** Toggle slope hazards, then open a Perseverance science popup.
-- **23–30 s:** “NASA data, live routing, and science along the way.”
+
+- **0–5 seconds.** “Mars Explorer combines orbital maps and rover observations in one interactive globe.”
+- **5–12 seconds.** “At Jezero, select two points to compare candidate walking routes.”
+- **12–20 seconds.** “This slightly longer route has a lower maximum modeled slope. Orange marks steep segments, and dashed purple marks gaps in the selected data.”
+- **20–27 seconds.** “Open a Perseverance science site to see what an explorer could study.”
+- **27–30 seconds.** “Mars Explorer shows what the data support and where more measurements are needed.”

@@ -221,3 +221,12 @@ __marimo__/
 
 *.tif
 *.tiff
+/data/raw/
+/data/processed/
+/data/explorer/mola.img
+/data/explorer/mola16.img
+
+# Local secrets
+.env.*
+*.pem
+*.key

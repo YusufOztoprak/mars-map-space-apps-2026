@@ -5,7 +5,7 @@
 
 // Address of the backend route service. If the server runs on another
 // machine/port, change only this line.
-const API_URL = "http://localhost:5000/route";
+const API_URL = globalThis.location?.port === "8000" ? "http://localhost:5000/route" : "/route";
 
 // Give up if the backend does not answer within this many milliseconds (30 s).
 const API_TIMEOUT_MS = 30000;
@@ -43,7 +43,7 @@ const SLOPE_THRESHOLD_DEG = 20;
 
 // Science points prepared by the data team (GeoJSON FeatureCollection).
 // The path is relative to the page: serve the page FROM THE REPO ROOT
-// ("python -m http.server 8000" in the repo root → http://localhost:8000/frontend/index.html),
+// ("python -m http.server 8000" in the repo root → http://localhost:8000/frontend/legacy.html),
 // otherwise ../data cannot be reached. If the file is missing, the map still works.
 const SCIENCE_POINTS_URL = "../data/science_points.json";
 
@@ -72,7 +72,7 @@ const HIRISE = {
 // frontend/ from the SAME slope data the router uses (CTX DEM, 20 m):
 //   slope_overlay.png  → coloured semi-transparent image (transparency is in the image)
 //   slope_overlay.json → lat/lon bounds of the image + slope limit
-// Paths are relative to the page (frontend/index.html). Because the DEM is
+// Paths are relative to the page (frontend/legacy.html). Because the DEM is
 // equirectangular, L.imageOverlay places the image correctly.
 const SLOPE_OVERLAY = {
   metaUrl: "slope_overlay.json",

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Martian Map — Jezero Safe Marswalk</title>
+
+  <!-- Leaflet 1.9.4 from a CDN, pinned version. The "integrity" hash lets the
+       browser verify the file was not altered (hashes checked with curl). -->
+  <link rel="stylesheet" href="vendor/leaflet/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="vendor/leaflet/leaflet.js"
+          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    /* The map fills the whole window */
+    html, body { height: 100%; margin: 0; font-family: system-ui, sans-serif; }
+    #map { height: 100%; background: #1b1b1b; }
+
+    /* Status/info box at the bottom left. 15 px: readable from a distance on a projector. */
+    .status-box {
+      background: rgba(255, 255, 255, 0.96);
+      padding: 8px 12px; border-radius: 6px; max-width: 320px;
+      box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); font-size: 15px; line-height: 1.4;
+    }
+    .status-box.error { background: #fde2e2; color: #8a1010; font-weight: 600; }
+    .status-box.loading { background: #fff3c4; font-weight: 600; }
+    /* Small spinning ring while computing (no image or library needed) */
+    .status-box.loading::before {
+      content: ""; display: inline-block; width: 14px; height: 14px; margin-right: 8px;
+      vertical-align: -2px; border: 3px solid #b38f00; border-top-color: transparent;
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    /* The mouse cursor also shows "busy" while computing */
+    .leaflet-container.route-computing { cursor: progress; }
+    /* Slightly larger text in the layer panel */
+    .leaflet-control-layers { font-size: 14px; }
+
+    /* Slope layer: show the 20 m cells without smoothing */
+    .slope-layer { image-rendering: pixelated; }
+    /* Slope legend (bottom right) */
+    .slope-legend .title { font-weight: 600; margin-bottom: 4px; }
+    .slope-legend .swatch { display: inline-block; width: 14px; height: 14px; margin-right: 6px;
+                            vertical-align: -2px; border: 1px solid rgba(0,0,0,.3); }
+
+    /* Route summary: title + label/value rows */
+    .route-summary { min-width: 230px; max-width: 380px; } /* English labels are long: keep the note on one line */
+    .route-summary .title { font-weight: 600; margin-bottom: 4px; border-left: 4px solid #00b8d4; padding-left: 6px; }
+    .route-summary .metric { display: flex; align-items: baseline; gap: 6px; padding: 2px 0; }
+    .route-summary .label { color: #555; min-width: 128px; }
+    .route-summary .metric b { font-size: 16px; white-space: nowrap; }
+    /* Notes in #666 instead of #888: readable contrast on white, even on a projector */
+    .route-summary .note { color: #666; font-size: 12px; }
+    .route-summary .hint { color: #555; font-size: 13px; margin-top: 4px; }
+
+    /* Narrow screen (phone): boxes must not overlap and the map stays visible */
+    @media (max-width: 600px) {
+      .status-box { font-size: 14px; max-width: calc(100vw - 40px); }
+      .route-summary { min-width: 0; }
+      .route-summary .note { display: none; }       /* extra notes hidden to save space */
+      .slope-legend { font-size: 12px; padding: 6px 8px; }
+      .slope-legend .title { display: none; }
+      .slope-legend .swatch { width: 12px; height: 12px; }
+      /* The long credit line (cannot be shortened: the usage policy asks for the full
+         text) sits full-width at the very bottom; the scale bar and route box on the
+         bottom left are pushed above it, so nothing overlaps. */
+      .leaflet-bottom.leaflet-right { left: 0; }
+      .leaflet-control-attribution { font-size: 10px; line-height: 1.3; text-align: right; white-space: normal; }
+      .leaflet-bottom.leaflet-left { bottom: 30px; }
+    }
+
+    /* Science point popup */
+    .science-popup h3 { margin: 0 0 6px; font-size: 15px; }
+    /* Fixed 4:3 image box: the popup size is known when it opens (so panning works).
+       scale-down: small images (e.g. 128 px) are not upscaled and blurred; large ones are fitted. */
+    .science-popup img { width: 100%; aspect-ratio: 4 / 3; object-fit: scale-down;
+                         background: #222; border-radius: 4px; display: block; }
+    .science-popup p { margin: 6px 0; }
+    .science-popup .small { font-size: 11px; color: #555; }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Order matters: settings first, then the app -->
+  <script src="config.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

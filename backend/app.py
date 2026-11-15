@@ -8,7 +8,8 @@ from flask_cors import CORS
 from rasterio.transform import rowcol, xy as transform_xy
 from werkzeug.exceptions import HTTPException
 
-from dem_utils import load_dem, compute_slope
+from dem_utils import load_dem, terrain_metrics
+from explorer import register_explorer
 from routing import build_cost_grid, astar
 
 app = Flask(__name__)
@@ -23,21 +24,21 @@ STANDARD_PARALLEL_DEG = 18.4663
 CENTRAL_MERIDIAN_DEG = 0.0
 
 DEM_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "data", "jezero_dem.tif")
-if not os.path.exists(DEM_PATH):
-    raise SystemExit(
-        "Elevation model not found: data/jezero_dem.tif\n"
-        "Download it first (about 90 MB), see README > Quick start:\n"
-        "  curl -L -o data/jezero_dem.tif "
-        "https://planetarymaps.usgs.gov/mosaic/mars2020_trn/CTX/ScienceInvestigationMaps_JPL/M20_JezeroCrater_CTXDEM_20m.tif"
-    )
-elevation, transform, crs, nodata = load_dem(DEM_PATH)
-cellsize = transform.a  # 20.0 meters/pixel
-slope_deg = compute_slope(elevation, cellsize)
-cost_grid = build_cost_grid(slope_deg, cellsize)
-if nodata is not None:
-    cost_grid[elevation == nodata] = np.inf
-GRID_HEIGHT, GRID_WIDTH = elevation.shape
-H_SCALE = float(np.min(cost_grid[np.isfinite(cost_grid)]))
+elevation = transform = crs = nodata = slope_deg = roughness = cost_grid = None
+cellsize, GRID_HEIGHT, GRID_WIDTH, H_SCALE = 20.0, 0, 0, 0.0
+try:
+    raw_elevation, transform, crs, nodata = load_dem(DEM_PATH)
+    cellsize = transform.a
+    elevation, slope_deg, roughness = terrain_metrics(raw_elevation, cellsize, nodata)
+    del raw_elevation
+    cost_grid = build_cost_grid(slope_deg, cellsize)
+    GRID_HEIGHT, GRID_WIDTH = elevation.shape
+    finite = cost_grid[np.isfinite(cost_grid)]
+    if finite.size:
+        H_SCALE = float(finite.min())
+    del finite
+except (OSError, RuntimeError, ValueError) as exc:
+    app.logger.warning("Jezero CTX DEM unavailable: %s", exc)
 # Longest straight-line distance we route in one request. A 21 km walk already
 # takes ~14 h, so longer requests are not realistic single EVAs, and very long
 # searches (~117 km) take over a minute and time out in the frontend.
@@ -47,16 +48,16 @@ MAX_ROUTE_KM = 30.0
 def lonlat_to_xy(lon, lat):
     """Project geographic lon/lat (degrees) to the DEM's equirectangular x/y (meters)."""
     cos_std = math.cos(math.radians(STANDARD_PARALLEL_DEG))
-    x = MARS_RADIUS_M * math.radians(lon - CENTRAL_MERIDIAN_DEG) * cos_std
-    y = MARS_RADIUS_M * math.radians(lat)
+    x = MARS_RADIUS_M * np.radians(lon - CENTRAL_MERIDIAN_DEG) * cos_std
+    y = MARS_RADIUS_M * np.radians(lat)
     return x, y
 
 
 def xy_to_lonlat(x, y):
     """Inverse of lonlat_to_xy."""
     cos_std = math.cos(math.radians(STANDARD_PARALLEL_DEG))
-    lon = CENTRAL_MERIDIAN_DEG + math.degrees(x / (MARS_RADIUS_M * cos_std))
-    lat = math.degrees(y / MARS_RADIUS_M)
+    lon = CENTRAL_MERIDIAN_DEG + np.degrees(x / (MARS_RADIUS_M * cos_std))
+    lat = np.degrees(y / MARS_RADIUS_M)
     return lon, lat
 
 
@@ -71,7 +72,7 @@ def lonlat_to_pixel(lat, lon):
     row, col = rowcol(transform, x, y)
     if not (0 <= row < GRID_HEIGHT and 0 <= col < GRID_WIDTH):
         return None
-    if nodata is not None and elevation[row, col] == nodata:
+    if not np.isfinite(elevation[row, col]):
         return None
     return row, col
 
@@ -98,7 +99,7 @@ def path_stats(path):
         distance_m += cellsize * diag
         time_s += cost_grid[r1, c1] * diag
         max_slope = max(max_slope, float(slope_deg[r1, c1]))
-    return round(distance_m / 1000, 3), round(time_s / 3600, 3), round(max_slope, 1)
+    return round(distance_m / 1000, 3), round(float(time_s) / 3600, 3), round(max_slope, 1)
 def _as_number(value):
     """Accept only finite JSON numbers (rejects strings, booleans, NaN, inf)."""
     if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
@@ -116,27 +117,29 @@ def parse_point(obj):
 @app.route("/route", methods=["POST"])
 def route():
     data = request.get_json(silent=True)
-    if not data or "start" not in data or "end" not in data:
-        return jsonify({"error": "request body must include 'start' and 'end'"}), 400
+    if not isinstance(data, dict) or "start" not in data or "end" not in data:
+        return jsonify({"error": "The request must include 'start' and 'end'."}), 400
+    if cost_grid is None:
+        return jsonify({"error": "Jezero elevation data are unavailable."}), 503
 
     try:
         start_lat, start_lon = parse_point(data["start"])
         end_lat, end_lon = parse_point(data["end"])
     except (KeyError, TypeError, ValueError):
-        return jsonify({"error": "start and end must be {'lat': number, 'lon': number}"}), 400
+        return jsonify({"error": "Start and end must contain numeric lat and lon values."}), 400
 
     start_rc = lonlat_to_pixel(start_lat, start_lon)
     end_rc = lonlat_to_pixel(end_lat, end_lon)
     if start_rc is None or end_rc is None:
-        return jsonify({"error": "point is outside the elevation model coverage"}), 422
+        return jsonify({"error": "The coordinates fall outside valid elevation coverage."}), 422
 
 
 
     if surface_distance_km(start_lat, start_lon, end_lat, end_lon) > MAX_ROUTE_KM:
-        return jsonify({"error": f"points are more than {MAX_ROUTE_KM:.0f} km apart; choose two closer points"}), 422
+        return jsonify({"error": f"The endpoints are more than {MAX_ROUTE_KM:.0f} km apart. Choose points closer together."}), 422
     path = astar(cost_grid, start_rc, end_rc, h_scale=H_SCALE)
     if path is None:
-        return jsonify({"error": "no safe route found (terrain too steep)"}), 422
+        return jsonify({"error": "No candidate route meets the slope limit."}), 422
 
     if len(path) == 1:
         path = [path[0], path[0]]  # degenerate case: start and end in the same cell
@@ -158,7 +161,7 @@ def route():
 
 @app.route("/health", methods=["GET"])
 def health():
-    return jsonify({"status": "ok", "grid": [GRID_HEIGHT, GRID_WIDTH]})
+    return jsonify({"status": "ok", "grid": [GRID_HEIGHT, GRID_WIDTH], "ctx_available": cost_grid is not None})
 
 
 @app.errorhandler(HTTPException)
@@ -169,8 +172,14 @@ def handle_http_exception(e):
 @app.errorhandler(Exception)
 def handle_unexpected_error(e):
     app.logger.exception("Unexpected error")
-    return jsonify({"error": "server error, please try again"}), 500
+    return jsonify({"error": "A server error occurred. Please try again."}), 500
 
+
+register_explorer(app, {
+    "height": elevation, "slope": slope_deg, "roughness": roughness,
+    "transform": transform, "cellsize": cellsize,
+    "to_xy": lonlat_to_xy, "to_lonlat": xy_to_lonlat,
+})
 
 if __name__ == "__main__":
-    app.run(debug=False, port=5000)
+    app.run(debug=False, port=int(os.environ.get("MARS_PORT", "5000")))

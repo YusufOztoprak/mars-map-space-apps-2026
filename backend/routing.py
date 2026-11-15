@@ -18,27 +18,28 @@ def build_cost_grid(slope_degrees, cellsize):
     """Convert slope grid to a time-cost grid. Cells over the safety threshold become np.inf (impassable)."""
     speed_kmh = tobler_speed_kmh(slope_degrees)
     speed_ms = speed_kmh * 1000 / 3600
-    with np.errstate(divide='ignore'):
+    with np.errstate(divide='ignore', over='ignore'):
         cost = cellsize / speed_ms
     cost[slope_degrees > SAFETY_THRESHOLD_DEG] = np.inf
     cost[~np.isfinite(cost)] = np.inf
     return cost
 
 
-def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2):
+def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2, max_expansions=None, horizontal_scale=1.0):
     """Weighted grid A* with a closed set.
 
     h_scale: minimum per-cell cost (seconds), so the Euclidean heuristic uses
-    the same units as the step costs. weight > 1 trades a bounded amount of
-    optimality (path cost <= weight * optimal) for a much faster search.
+    the same units as the step costs. A weight above 1 prioritizes speed
+    over strict optimality.
     Returns a list of (row, col) cells, or None if no path exists.
     """
     height, width = cost_grid.shape
     if cost_grid[start] == np.inf or cost_grid[goal] == np.inf:
         return None
 
-    neighbors = [(-1, 0, 1.0), (1, 0, 1.0), (0, -1, 1.0), (0, 1, 1.0),
-                 (-1, -1, 1.4142), (-1, 1, 1.4142), (1, -1, 1.4142), (1, 1, 1.4142)]
+    diagonal = math.hypot(1, horizontal_scale)
+    neighbors = [(-1, 0, 1.0), (1, 0, 1.0), (0, -1, horizontal_scale), (0, 1, horizontal_scale),
+                 (-1, -1, diagonal), (-1, 1, diagonal), (1, -1, diagonal), (1, 1, diagonal)]
     goal_r, goal_c = goal
     h_factor = h_scale * weight
 
@@ -58,6 +59,8 @@ def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2):
                 current = came_from[current]
                 path.append(current)
             return path[::-1]
+        if max_expansions is not None and len(closed) >= max_expansions:
+            return None
 
         r, c = current
         for dr, dc, step in neighbors:
@@ -67,16 +70,15 @@ def astar(cost_grid, start, goal, h_scale=1.0, weight=1.2):
             cell_cost = cost_grid[nr, nc]
             if cell_cost == np.inf:
                 continue
-            # No corner cutting: a diagonal step is allowed only if both cells
-            # it squeezes past are passable, so the path never clips a blocked cell.
-            if dr and dc and (cost_grid[r + dr, c] == np.inf or cost_grid[r, c + dc] == np.inf):
+            # Both side cells must be passable for a diagonal move.
+            if dr and dc and (cost_grid[r, nc] == np.inf or cost_grid[nr, c] == np.inf):
                 continue
             tentative_g = g_current + cell_cost * step
             neighbor = (nr, nc)
             if tentative_g < g_score.get(neighbor, np.inf):
                 came_from[neighbor] = current
                 g_score[neighbor] = tentative_g
-                f_score = tentative_g + h_factor * math.hypot(nr - goal_r, nc - goal_c)
+                f_score = tentative_g + h_factor * math.hypot(nr - goal_r, (nc - goal_c) * horizontal_scale)
                 heapq.heappush(open_set, (f_score, tentative_g, neighbor))
 
     return None
